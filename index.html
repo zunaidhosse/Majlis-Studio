@@ -1,0 +1,3826 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Majlis &amp; Musanad Layout Calculator</title>
+    <meta name="description" content="Offline-capable Majlis and Musanad sofa piece calculator, 2D floor-plan layout maker, and printable architectural specification generator." />
+    <meta property="og:title" content="Majlis &amp; Musanad Layout Calculator" />
+    <meta property="og:description" content="Offline-capable Majlis and Musanad sofa piece calculator, 2D floor-plan layout maker, and printable architectural specification generator." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#1d4ed8" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Majlis Calc" />
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+    <link rel="icon" type="image/svg+xml" href="./icon.svg" />
+    <style>
+      :root {
+        --bg-canvas: #f1f5f9;
+        --bg-mesh-1: rgba(37, 99, 235, 0.08);
+        --bg-mesh-2: rgba(14, 165, 233, 0.07);
+        --surface-glass: rgba(255, 255, 255, 0.86);
+        --surface-solid: #ffffff;
+        --surface-subtle: #f8fafc;
+        --border-hairline: rgba(148, 163, 184, 0.28);
+        --border-strong: rgba(100, 116, 139, 0.35);
+        --text-primary: #0f172a;
+        --text-secondary: #475569;
+        --text-muted: #64748b;
+        --brand-blue: #1d4ed8;
+        --brand-blue-hover: #1e40af;
+        --brand-blue-soft: rgba(29, 78, 216, 0.08);
+        --amber-z-bg: #fef3c7;
+        --amber-z-border: #d97706;
+        --amber-z-text: #92400e;
+        --danger: #dc2626;
+        --danger-soft: rgba(220, 38, 38, 0.08);
+        --success: #059669;
+        --warning: #d97706;
+        --shadow-glass: 0 4px 24px -6px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.04);
+        --radius-lg: 14px;
+        --radius-md: 10px;
+        --radius-sm: 8px;
+        --font-sans: 'Plus Jakarta Sans', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+        --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      }
+
+      *, *::before, *::after {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        font-family: var(--font-sans);
+        color: var(--text-primary);
+        background-color: var(--bg-canvas);
+        background-image:
+          radial-gradient(at 10% 0%, var(--bg-mesh-1) 0px, transparent 52%),
+          radial-gradient(at 90% 8%, var(--bg-mesh-2) 0px, transparent 48%);
+        background-attachment: fixed;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .tabular {
+        font-variant-numeric: tabular-nums;
+        font-family: var(--font-mono);
+      }
+
+      button, input, select {
+        font-family: inherit;
+      }
+
+      button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible {
+        outline: 2px solid var(--brand-blue);
+        outline-offset: 2px;
+      }
+
+      /* Top Navigation Bar (3-zone contract) */
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 40;
+        background: rgba(255, 255, 255, 0.88);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        border-bottom: 1px solid var(--border-hairline);
+      }
+
+      .topbar-inner {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 12px 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 32px;
+      }
+
+      .brand-wordmark {
+        font-size: 1.125rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: var(--text-primary);
+        text-decoration: none;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+
+      .nav-links {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+      }
+
+      .nav-link {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: var(--text-secondary);
+        text-decoration: none;
+        white-space: nowrap;
+        flex-shrink: 0;
+        padding: 4px 0;
+        border-bottom: 1.5px solid transparent;
+        transition: color 0.16s ease, border-color 0.16s ease;
+        background: none;
+        border-top: none;
+        border-left: none;
+        border-right: none;
+        cursor: pointer;
+      }
+
+      .nav-link:hover {
+        color: var(--brand-blue);
+        border-bottom-color: var(--brand-blue);
+      }
+
+      .topbar-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-shrink: 0;
+      }
+
+      /* Buttons */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 40px;
+        padding: 8px 16px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        border-radius: var(--radius-sm);
+        border: 1px solid transparent;
+        cursor: pointer;
+        white-space: nowrap;
+        flex-shrink: 0;
+        transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease, transform 0.12s ease;
+      }
+
+      .btn:active {
+        transform: translateY(1px);
+      }
+
+      .btn-primary {
+        background-color: var(--brand-blue);
+        color: #ffffff;
+      }
+
+      .btn-primary:hover {
+        background-color: var(--brand-blue-hover);
+      }
+
+      .btn-secondary {
+        background-color: var(--surface-solid);
+        color: var(--text-primary);
+        border-color: var(--border-strong);
+      }
+
+      .btn-secondary:hover {
+        background-color: var(--surface-subtle);
+        border-color: var(--brand-blue);
+        color: var(--brand-blue);
+      }
+
+      .btn-ghost {
+        background-color: transparent;
+        color: var(--text-secondary);
+        border-color: transparent;
+      }
+
+      .btn-ghost:hover {
+        background-color: var(--brand-blue-soft);
+        color: var(--brand-blue);
+      }
+
+      .btn-danger {
+        background-color: var(--surface-solid);
+        color: var(--danger);
+        border-color: rgba(220, 38, 38, 0.3);
+      }
+
+      .btn-danger:hover {
+        background-color: var(--danger-soft);
+        border-color: var(--danger);
+      }
+
+      .btn-sm {
+        min-height: 36px;
+        padding: 6px 12px;
+        font-size: 0.8125rem;
+      }
+
+      .btn-icon {
+        min-height: 38px;
+        min-width: 38px;
+        padding: 6px;
+      }
+
+      /* Container */
+      .container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+      }
+
+      /* Glass Panels */
+      .glass-panel {
+        background: var(--surface-glass);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid var(--border-hairline);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-glass);
+        padding: 18px 20px;
+      }
+
+      .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+
+      .section-title {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 700;
+        letter-spacing: -0.015em;
+        color: var(--text-primary);
+      }
+
+      /* Bidirectional & Numeric Input Stability */
+      input[dir="auto"],
+      textarea[dir="auto"] {
+        unicode-bidi: plaintext;
+        text-align: start;
+      }
+
+      .num-input,
+      .diagram-size-input {
+        direction: ltr;
+        unicode-bidi: isolate;
+      }
+
+      /* Project Header & Action Toolbar */
+      .project-bar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .project-title-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex: 1 1 240px;
+      }
+
+      .project-name-input {
+        font-size: 1.25rem;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        color: var(--text-primary);
+        background: transparent;
+        border: 1px solid transparent;
+        border-radius: var(--radius-sm);
+        padding: 6px 10px;
+        width: 100%;
+        max-width: 420px;
+        unicode-bidi: plaintext;
+        text-align: start;
+        transition: border-color 0.16s ease, background-color 0.16s ease;
+      }
+
+      .project-name-input:hover {
+        border-color: var(--border-hairline);
+        background: rgba(255, 255, 255, 0.7);
+      }
+
+      .project-name-input:focus {
+        border-color: var(--brand-blue);
+        background: #ffffff;
+        outline: none;
+      }
+
+      .project-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+      }
+
+      /* Template Selector Grid */
+      .templates-grid {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .template-card {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        text-align: left;
+        background: var(--surface-solid);
+        border: 1.5px solid var(--border-hairline);
+        border-radius: var(--radius-md);
+        padding: 10px;
+        cursor: pointer;
+        transition: border-color 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease;
+        gap: 8px;
+      }
+
+      .template-card:hover {
+        border-color: #60a5fa;
+        background: #fafcff;
+      }
+
+      .template-card.active {
+        border-color: var(--brand-blue);
+        background: rgba(239, 246, 255, 0.8);
+        box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.12);
+      }
+
+      .template-preview {
+        width: 100%;
+        height: 68px;
+        background: #f8fafc;
+        border: 1px solid rgba(148, 163, 184, 0.22);
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 5px;
+      }
+
+      .template-title {
+        font-size: 0.8125rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1.25;
+      }
+
+      /* Compact Controls Toolbar Above Floor Plan */
+      .floorplan-controls {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+
+      .room-settings-grid {
+        display: grid;
+        grid-template-columns: minmax(120px, 160px);
+        gap: 10px;
+      }
+
+      .field-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .field-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+      }
+
+      .input-wrap {
+        position: relative;
+        display: flex;
+        align-items: center;
+      }
+
+      .input-control {
+        width: 100%;
+        min-height: 40px;
+        padding: 6px 10px;
+        font-size: 0.9375rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        background: var(--surface-solid);
+        border: 1px solid var(--border-strong);
+        border-radius: var(--radius-sm);
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      }
+
+      .input-control.num-input {
+        text-align: left;
+      }
+
+      .input-control.with-unit {
+        padding-right: 36px;
+      }
+
+      .input-control:focus {
+        outline: none;
+        border-color: var(--brand-blue);
+        box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.12);
+      }
+
+      .input-unit {
+        position: absolute;
+        right: 10px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        pointer-events: none;
+      }
+
+      .z-quick-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        flex: 1 1 auto;
+      }
+
+      .z-toggles {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .z-toggle-btn {
+        min-height: 40px;
+        padding: 6px 11px;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border-strong);
+        background: var(--surface-solid);
+        color: var(--text-secondary);
+        font-size: 0.75rem;
+        font-weight: 700;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        transition: all 0.15s ease;
+      }
+
+      .z-toggle-btn.active {
+        background: var(--amber-z-bg);
+        border-color: var(--amber-z-border);
+        color: var(--amber-z-text);
+      }
+
+      /* Custom Layout Inline Controls */
+      .custom-controls-bar {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        padding: 12px 14px;
+        margin-bottom: 14px;
+        background: var(--surface-subtle);
+        border: 1px solid var(--border-hairline);
+        border-radius: var(--radius-md);
+      }
+
+      .custom-walls-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .custom-wall-btn {
+        min-height: 34px;
+        padding: 4px 12px;
+        border-radius: 6px;
+        border: 1px solid var(--border-strong);
+        background: #ffffff;
+        color: var(--text-secondary);
+        font-size: 0.75rem;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .custom-wall-btn.active {
+        background: var(--brand-blue);
+        border-color: var(--brand-blue);
+        color: #ffffff;
+      }
+
+      .custom-sections-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .custom-sec-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #ffffff;
+        border: 1px solid var(--border-hairline);
+        border-radius: 6px;
+        padding: 4px 8px;
+        font-size: 0.75rem;
+      }
+
+      .custom-sec-select,
+      .custom-sec-offset {
+        height: 28px;
+        padding: 2px 6px;
+        border: 1px solid var(--border-strong);
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        background: #ffffff;
+        color: var(--text-primary);
+      }
+
+      .custom-sec-offset {
+        width: 64px;
+      }
+
+      /* Floor Plan Canvas */
+      .canvas-stage {
+        position: relative;
+        background: #f8fafc;
+        border: 1px solid var(--border-hairline);
+        border-radius: var(--radius-md);
+        overflow-x: auto;
+        overflow-y: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 460px;
+      }
+
+      .canvas-stage-inner {
+        position: relative;
+        width: 100%;
+        max-width: 920px;
+        aspect-ratio: 880 / 660;
+        flex-shrink: 0;
+      }
+
+      .floorplan-svg {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+
+      .diagram-inputs-overlay {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+      }
+
+      .diagram-input-box {
+        position: absolute;
+        transform: translate(-50%, -50%);
+        pointer-events: auto;
+        background: rgba(255, 255, 255, 0.96);
+        border: 1.5px solid var(--border-strong);
+        border-radius: 8px;
+        padding: 4px 6px;
+        box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        width: 108px;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      }
+
+      .diagram-input-box:focus-within {
+        border-color: var(--brand-blue);
+        box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.14);
+        z-index: 10;
+      }
+
+      .diagram-input-title {
+        font-size: 0.625rem;
+        font-weight: 700;
+        color: var(--text-muted);
+        letter-spacing: 0.02em;
+        white-space: nowrap;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .diagram-input-row {
+        display: flex;
+        align-items: center;
+        gap: 3px;
+        width: 100%;
+      }
+
+      .diagram-size-input {
+        width: 100%;
+        min-width: 0;
+        height: 28px;
+        border: 1px solid var(--border-hairline);
+        border-radius: 5px;
+        padding: 2px 5px;
+        font-size: 0.8125rem;
+        font-weight: 700;
+        font-family: var(--font-mono);
+        text-align: center;
+        color: var(--text-primary);
+        background: #f8fafc;
+      }
+
+      .diagram-size-input:focus {
+        outline: none;
+        border-color: var(--brand-blue);
+        background: #ffffff;
+      }
+
+      .diagram-unit {
+        font-size: 0.6875rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        flex-shrink: 0;
+      }
+
+      .diagram-input-calc {
+        font-size: 0.625rem;
+        font-weight: 600;
+        color: var(--brand-blue);
+        font-family: var(--font-mono);
+        white-space: nowrap;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .legend-bar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px;
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid var(--border-hairline);
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+      }
+
+      .legend-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-weight: 600;
+      }
+
+      .legend-swatch {
+        width: 12px;
+        height: 12px;
+        border-radius: 3px;
+        border: 1px solid rgba(15, 23, 42, 0.18);
+        flex-shrink: 0;
+      }
+
+      .bottom-download-bar {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 4px 0 12px;
+      }
+
+      .btn-download-all {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        width: 100%;
+        max-width: 340px;
+        min-height: 48px;
+        padding: 12px 24px;
+        border-radius: var(--radius-md);
+        border: none;
+        background: var(--brand-blue);
+        color: #ffffff;
+        font-size: 0.9375rem;
+        font-weight: 700;
+        cursor: pointer;
+        box-shadow: 0 4px 14px rgba(29, 78, 216, 0.28);
+        transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+      }
+
+      .btn-download-all:hover {
+        background: var(--brand-blue-hover);
+        box-shadow: 0 6px 18px rgba(29, 78, 216, 0.35);
+      }
+
+      .btn-download-all:active {
+        transform: translateY(1px);
+      }
+
+      .fit-warning {
+        margin-top: 10px;
+        padding: 10px 14px;
+        border-radius: var(--radius-sm);
+        background: rgba(217, 119, 6, 0.08);
+        border: 1px solid rgba(217, 119, 6, 0.35);
+        color: #92400e;
+        font-size: 0.8125rem;
+        font-weight: 500;
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+      }
+
+      .empty-wall-state {
+        padding: 20px 16px;
+        text-align: center;
+        background: var(--surface-subtle);
+        border: 1px dashed var(--border-strong);
+        border-radius: var(--radius-md);
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+      }
+
+      /* Saved Projects Drawer & Modal */
+      .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+        background: rgba(15, 23, 42, 0.45);
+        backdrop-filter: blur(4px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+      }
+
+      .modal-backdrop.open {
+        display: flex;
+      }
+
+      .modal-card {
+        width: 100%;
+        max-width: 560px;
+        max-height: 85vh;
+        overflow-y: auto;
+        background: #ffffff;
+        border: 1px solid var(--border-hairline);
+        border-radius: var(--radius-lg);
+        box-shadow: 0 20px 50px rgba(15, 23, 42, 0.22);
+        padding: 22px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .modal-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--border-hairline);
+      }
+
+      .modal-title {
+        margin: 0;
+        font-size: 1.0625rem;
+        font-weight: 700;
+      }
+
+      .saved-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .saved-item {
+        padding: 12px 14px;
+        border: 1px solid var(--border-hairline);
+        border-radius: var(--radius-md);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 10px;
+        background: var(--surface-subtle);
+      }
+
+      .saved-item.current {
+        border-color: var(--brand-blue);
+        background: rgba(239, 246, 255, 0.65);
+      }
+
+      .saved-item-actions {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      /* Toast Notice */
+      .toast {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 120;
+        background: #0f172a;
+        color: #ffffff;
+        padding: 12px 16px;
+        border-radius: var(--radius-sm);
+        font-size: 0.875rem;
+        font-weight: 500;
+        box-shadow: 0 10px 25px rgba(15, 23, 42, 0.25);
+        opacity: 0;
+        transform: translateY(10px);
+        pointer-events: none;
+        transition: opacity 0.18s ease, transform 0.18s ease;
+      }
+
+      .toast.show {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      .offline-indicator {
+        position: fixed;
+        bottom: 16px;
+        left: 16px;
+        z-index: 120;
+        display: none;
+        align-items: center;
+        gap: 8px;
+        background: #b45309;
+        color: #ffffff;
+        padding: 8px 12px;
+        border-radius: var(--radius-sm);
+        font-size: 0.75rem;
+        font-weight: 700;
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.22);
+      }
+
+      .offline-indicator.visible {
+        display: inline-flex;
+      }
+
+      .offline-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #ffffff;
+      }
+
+      /* Print Only Report Header */
+      .print-only-header {
+        display: none;
+      }
+
+      @page {
+        size: A4 portrait;
+        margin: 12mm;
+      }
+
+      @media print {
+        body {
+          background: #ffffff !important;
+          color: #000000 !important;
+        }
+
+        .topbar,
+        .no-print,
+        #templates-section,
+        .modal-backdrop,
+        .toast,
+        .offline-indicator {
+          display: none !important;
+        }
+
+        .print-only-header {
+          display: flex !important;
+          justify-content: space-between;
+          align-items: flex-end;
+          border-bottom: 2px solid #0f172a;
+          padding-bottom: 10px;
+          margin-bottom: 14px;
+        }
+
+        .container {
+          max-width: 100%;
+          padding: 0;
+          gap: 14px;
+        }
+
+        .glass-panel {
+          background: #ffffff !important;
+          box-shadow: none !important;
+          border: 1px solid #cbd5e1 !important;
+          padding: 12px !important;
+          break-inside: avoid;
+        }
+
+        .canvas-stage {
+          min-height: 360px !important;
+          background: #ffffff !important;
+        }
+
+        .floorplan-svg {
+          max-height: 540px !important;
+        }
+      }
+
+      /* Responsive Breakpoints */
+      @media (max-width: 1180px) {
+        .templates-grid {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 820px) {
+        .nav-links {
+          display: none;
+        }
+
+        .room-settings-grid {
+          grid-template-columns: minmax(120px, 180px);
+        }
+      }
+
+      @media (max-width: 600px) {
+        .canvas-stage {
+          justify-content: flex-start;
+        }
+
+        .canvas-stage-inner {
+          min-width: 560px;
+        }
+
+        .topbar-inner {
+          padding: 10px 16px;
+          gap: 12px;
+        }
+
+        .container {
+          padding: 12px;
+          gap: 14px;
+        }
+
+        .templates-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .room-settings-grid {
+          grid-template-columns: minmax(120px, 1fr);
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Top Bar -->
+    <header class="topbar">
+      <div class="topbar-inner">
+        <a href="#top" class="brand-wordmark">Majlis Studio</a>
+        <nav class="nav-links" aria-label="Primary Navigation">
+          <a href="#templates-section" class="nav-link">Layouts</a>
+          <a href="#floorplan-section" class="nav-link">Floor Plan</a>
+          <button type="button" class="nav-link" id="open-projects-nav-btn">Projects</button>
+        </nav>
+        <div class="topbar-actions" style="display:flex;align-items:center;gap:8px;">
+          <button type="button" class="btn btn-secondary btn-sm" id="pwa-install-btn" style="display:none;">Install App</button>
+          <button type="button" class="btn btn-primary btn-sm" id="header-print-btn">Print</button>
+        </div>
+      </div>
+    </header>
+
+    <main id="top" class="container">
+      <!-- Print-only Header -->
+      <div class="print-only-header">
+        <div>
+          <h1 style="margin:0;font-size:1.35rem;" id="print-project-title">Majlis Project</h1>
+          <div style="font-size:0.875rem;color:#475569;margin-top:4px;" id="print-project-meta"></div>
+        </div>
+        <div style="text-align:right;font-size:0.8125rem;color:#475569;" id="print-date"></div>
+      </div>
+
+      <!-- Project Toolbar -->
+      <section class="glass-panel no-print" aria-label="Project Controls">
+        <div class="project-bar">
+          <div class="project-title-group">
+            <input
+              type="text"
+              dir="auto"
+              id="project-name-input"
+              class="project-name-input"
+              aria-label="Project Name"
+              placeholder="Project name"
+              autocomplete="off"
+            />
+          </div>
+          <div class="project-actions">
+            <button type="button" class="btn btn-secondary btn-sm" id="new-project-btn">New</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="save-project-btn">Save</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="manage-projects-btn">Projects (<span id="saved-count-label">0</span>)</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="download-pdf-btn">PDF</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="download-report-btn">Report</button>
+            <button type="button" class="btn btn-primary btn-sm" id="print-layout-btn">Print</button>
+            <button type="button" class="btn btn-danger btn-sm" id="reset-project-btn">Reset</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Layout Template Selector -->
+      <section class="glass-panel no-print" id="templates-section">
+        <div class="section-header">
+          <h2 class="section-title">Layout Shape</h2>
+          <button type="button" class="btn btn-secondary btn-sm" id="promote-custom-btn">Custom</button>
+        </div>
+        <div class="templates-grid" id="templates-grid"></div>
+      </section>
+
+      <!-- Visual 2D Floor Plan -->
+      <section class="glass-panel" id="floorplan-section">
+        <div class="floorplan-controls no-print">
+          <div class="room-settings-grid">
+            <div class="field-group">
+              <label class="field-label" for="z-size-input">Z Size</label>
+              <div class="input-wrap">
+                <input type="text" inputmode="decimal" dir="ltr" id="z-size-input" class="input-control num-input with-unit tabular" autocomplete="off" spellcheck="false" />
+                <span class="input-unit">cm</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="z-quick-group">
+            <span class="field-label">Z Corners</span>
+            <div class="z-toggles" id="z-toggles-grid"></div>
+          </div>
+        </div>
+
+        <!-- Custom Layout Controls (only visible when Custom Layout is active) -->
+        <div id="custom-controls-bar" class="custom-controls-bar no-print" style="display:none;"></div>
+
+        <div class="canvas-stage">
+          <div class="canvas-stage-inner">
+            <svg id="floorplan-svg" class="floorplan-svg" viewBox="0 0 880 660" role="img" aria-label="Majlis 2D Floor Plan"></svg>
+            <div id="diagram-inputs-overlay" class="diagram-inputs-overlay no-print"></div>
+          </div>
+        </div>
+
+        <div id="fit-warnings-container"></div>
+
+        <div class="legend-bar">
+          <span class="legend-item"><span class="legend-swatch" style="background:#1d4ed8;"></span>200–210</span>
+          <span class="legend-item"><span class="legend-swatch" style="background:#0284c7;"></span>180–199</span>
+          <span class="legend-item"><span class="legend-swatch" style="background:#0d9488;"></span>150–179</span>
+          <span class="legend-item"><span class="legend-swatch" style="background:#4f46e5;"></span>125–149</span>
+          <span class="legend-item"><span class="legend-swatch" style="background:#3b82f6;"></span>100–124</span>
+          <span class="legend-item"><span class="legend-swatch" style="background:#7c3aed;"></span>&lt; 100</span>
+          <span class="legend-item"><span class="legend-swatch" style="background:#fef3c7;border-color:#d97706;"></span>Z</span>
+          <span class="legend-item"><span class="legend-swatch" style="background:repeating-linear-gradient(45deg,#e2e8f0,#e2e8f0 3px,#ffffff 3px,#ffffff 6px);"></span>Gap</span>
+        </div>
+      </section>
+
+      <!-- Bottom Complete Download Button -->
+      <div class="bottom-download-bar no-print">
+        <button type="button" class="btn-download-all" id="bottom-download-btn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          <span>Download</span>
+        </button>
+      </div>
+    </main>
+
+    <!-- Saved Projects Modal -->
+    <div class="modal-backdrop" id="projects-modal" role="dialog" aria-modal="true" aria-labelledby="projects-modal-title">
+      <div class="modal-card">
+        <div class="modal-head">
+          <h3 class="modal-title" id="projects-modal-title">Saved Projects</h3>
+          <button type="button" class="btn btn-ghost btn-sm" id="close-projects-modal-btn">Close</button>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <input type="text" dir="auto" id="save-as-name-input" class="input-control" style="flex:1;min-height:40px;" placeholder="Project name" autocomplete="off" />
+          <button type="button" class="btn btn-primary btn-sm" id="confirm-save-as-btn">Save</button>
+        </div>
+        <div class="saved-list" id="saved-projects-list"></div>
+      </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div class="modal-backdrop" id="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title">
+      <div class="modal-card" style="max-width:420px;">
+        <div class="modal-head">
+          <h3 class="modal-title" id="confirm-modal-title">Confirm</h3>
+        </div>
+        <p id="confirm-modal-message" style="margin:0;font-size:0.9375rem;color:var(--text-secondary);"></p>
+        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:8px;">
+          <button type="button" class="btn btn-secondary btn-sm" id="confirm-cancel-btn">Cancel</button>
+          <button type="button" class="btn btn-danger btn-sm" id="confirm-ok-btn">Confirm</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- iOS Install Guide Modal -->
+    <div class="modal-backdrop" id="ios-install-modal" role="dialog" aria-modal="true" aria-labelledby="ios-install-title">
+      <div class="modal-card" style="max-width:400px;">
+        <div class="modal-head">
+          <h3 class="modal-title" id="ios-install-title">Install on iPhone / iPad</h3>
+          <button type="button" class="btn btn-ghost btn-sm" id="close-ios-install-btn">Close</button>
+        </div>
+        <p style="margin:0;font-size:0.9375rem;color:var(--text-secondary);line-height:1.6;">
+          1. Tap the <strong>Share</strong> button in Safari toolbar.<br />
+          2. Scroll down and tap <strong>Add to Home Screen</strong>.
+        </p>
+        <div style="display:flex;justify-content:flex-end;margin-top:8px;">
+          <button type="button" class="btn btn-primary btn-sm" id="ok-ios-install-btn">Got it</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="offline-indicator" id="offline-indicator" role="status" aria-live="polite">
+      <span class="offline-dot"></span>
+      <span>Offline Mode — Works without internet</span>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script>
+      (function () {
+        'use strict';
+
+        /* =========================================================
+           1. CONSTANTS & TEMPLATES (FAITHFUL TO HAND SKETCHES)
+           ========================================================= */
+        var STANDARD_SIZES = [200, 183, 150, 125, 100];
+        var MAX_PIECE_SIZE = 210;
+        var MIN_PIECE_SIZE = 1;
+        var STORAGE_CURRENT_KEY = 'majlis_calc_current_v2';
+        var STORAGE_SAVED_KEY = 'majlis_calc_saved_v1';
+
+        var SIZE_COLORS = {
+          200: { fill: '#1d4ed8', stroke: '#1e3a8a', text: '#ffffff', back: '#172554' },
+          183: { fill: '#0284c7', stroke: '#075985', text: '#ffffff', back: '#0c4a6e' },
+          150: { fill: '#0d9488', stroke: '#115e59', text: '#ffffff', back: '#134e4a' },
+          125: { fill: '#4f46e5', stroke: '#3730a3', text: '#ffffff', back: '#312e81' },
+          100: { fill: '#3b82f6', stroke: '#1d4ed8', text: '#ffffff', back: '#1e40af' },
+          custom: { fill: '#7c3aed', stroke: '#5b21b6', text: '#ffffff', back: '#4c1d95' },
+          z: { fill: '#fef3c7', stroke: '#d97706', text: '#92400e', back: '#f59e0b' }
+        };
+
+        function roundCm(val) {
+          return Math.round((Number(val) || 0) * 10) / 10;
+        }
+
+        function formatCm(val) {
+          return String(roundCm(val));
+        }
+
+        function getNormalizedZSize(project) {
+          var raw = project && project.zSize;
+          if (raw === undefined || raw === null || raw === '') return 100;
+          var n = Number(raw);
+          if (!isFinite(n) || n < 0) return 100;
+          return Math.min(300, roundCm(n));
+        }
+
+        function uid(prefix) {
+          return (prefix || 'id') + '_' + Math.random().toString(36).slice(2, 9);
+        }
+
+        function deepClone(obj) {
+          return JSON.parse(JSON.stringify(obj));
+        }
+
+        function normalizeDigits(str) {
+          return String(str == null ? '' : str)
+            .replace(/[\u09E6-\u09EF]/g, function (c) { return String(c.charCodeAt(0) - 0x09E6); })
+            .replace(/[\u0660-\u0669]/g, function (c) { return String(c.charCodeAt(0) - 0x0660); })
+            .replace(/[\u06F0-\u06F9]/g, function (c) { return String(c.charCodeAt(0) - 0x06F0); })
+            .replace(/\u066B/g, '.');
+        }
+
+        function parseLocalizedNumber(raw) {
+          var normalized = normalizeDigits(raw).replace(/[\s,]+/g, '');
+          if (!normalized) return NaN;
+          var n = Number(normalized);
+          return isFinite(n) ? n : NaN;
+        }
+
+        var TEMPLATES = {
+          template1: {
+            id: 'template1',
+            name: 'U-Shape with Split Bottom',
+            shortName: '1. Split Bottom U',
+            description: 'Top, Left, Right + 2 bottom sections with central gap · 4 Z slots',
+            roomWidth: 650,
+            roomDepth: 650,
+            zSize: 100,
+            corners: { topLeft: false, topRight: false, bottomLeft: false, bottomRight: false },
+            recommendedCorners: { topLeft: true, topRight: true, bottomLeft: true, bottomRight: true },
+            walls: {
+              top: {
+                enabled: true,
+                sections: [
+                  { id: 't1_top', name: 'Top Main', anchor: 'start', startPos: 100, guideStartRatio: 0, guideEndRatio: 1, pieces: [] }
+                ]
+              },
+              left: {
+                enabled: true,
+                sections: [
+                  { id: 't1_left', name: 'Left Main', anchor: 'start', startPos: 100, guideStartRatio: 0, guideEndRatio: 1, pieces: [] }
+                ]
+              },
+              right: {
+                enabled: true,
+                sections: [
+                  { id: 't1_right', name: 'Right Main', anchor: 'start', startPos: 100, guideStartRatio: 0, guideEndRatio: 1, pieces: [] }
+                ]
+              },
+              bottom: {
+                enabled: true,
+                sections: [
+                  { id: 't1_bot_l', name: 'Bottom-Left Section', anchor: 'start', startPos: 100, guideStartRatio: 0, guideEndRatio: 0.36, pieces: [] },
+                  { id: 't1_bot_r', name: 'Bottom-Right Section', anchor: 'end', startPos: 450, guideStartRatio: 0.64, guideEndRatio: 1, pieces: [] }
+                ]
+              }
+            }
+          },
+          template2: {
+            id: 'template2',
+            name: 'Open Bottom with Partial Right',
+            shortName: '2. Partial Right & Bottom-L',
+            description: 'Top, Left, partial Right, short Bottom-Left · Open lower-right · 3 Z slots',
+            roomWidth: 500,
+            roomDepth: 450,
+            zSize: 100,
+            corners: { topLeft: false, topRight: false, bottomLeft: false, bottomRight: false },
+            recommendedCorners: { topLeft: true, topRight: true, bottomLeft: true, bottomRight: false },
+            walls: {
+              top: {
+                enabled: true,
+                sections: [
+                  { id: 't2_top', name: 'Top Main', anchor: 'start', startPos: 100, guideStartRatio: 0, guideEndRatio: 1, pieces: [] }
+                ]
+              },
+              left: {
+                enabled: true,
+                sections: [
+                  { id: 't2_left', name: 'Left Main', anchor: 'start', startPos: 100, guideStartRatio: 0, guideEndRatio: 1, pieces: [] }
+                ]
+              },
+              right: {
+                enabled: true,
+                sections: [
+                  { id: 't2_right', name: 'Right Partial (Upper)', anchor: 'start', startPos: 100, guideStartRatio: 0, guideEndRatio: 0.65, pieces: [] }
+                ]
+              },
+              bottom: {
+                enabled: true,
+                sections: [
+                  { id: 't2_bot_l', name: 'Bottom-Left Short', anchor: 'start', startPos: 100, guideStartRatio: 0, guideEndRatio: 0.44, pieces: [] }
+                ]
+              }
+            }
+          },
+          template3: {
+            id: 'template3',
+            name: 'Open Lower-Left with Partial Bottom-Right',
+            shortName: '3. Partial Left & Bottom-R',
+            description: 'Top, partial Left, Right, short Bottom-Right · Open lower-left · 3 Z slots',
+            roomWidth: 500,
+            roomDepth: 450,
+            zSize: 100,
+            corners: { topLeft: false, topRight: false, bottomLeft: false, bottomRight: false },
+            recommendedCorners: { topLeft: true, topRight: true, bottomLeft: false, bottomRight: true },
+            walls: {
+              top: {
+                enabled: true,
+                sections: [
+                  { id: 't3_top', name: 'Top Main', anchor: 'start', startPos: 100, guideStartRatio: 0, guideEndRatio: 1, pieces: [] }
+                ]
+              },
+              left: {
+                enabled: true,
+                sections: [
+                  { id: 't3_left', name: 'Left Partial (Upper)', anchor: 'start', startPos: 100, guideStartRatio: 0, guideEndRatio: 0.65, pieces: [] }
+                ]
+              },
+              right: {
+                enabled: true,
+                sections: [
+                  { id: 't3_right', name: 'Right Main', anchor: 'start', startPos: 100, guideStartRatio: 0, guideEndRatio: 1, pieces: [] }
+                ]
+              },
+              bottom: {
+                enabled: true,
+                sections: [
+                  { id: 't3_bot_r', name: 'Bottom-Right Short', anchor: 'end', startPos: 200, guideStartRatio: 0.56, guideEndRatio: 1, pieces: [] }
+                ]
+              }
+            }
+          },
+          template4: {
+            id: 'template4',
+            name: 'Three-Sided Upper Layout',
+            shortName: '4. 3-Sided Open Bottom',
+            description: 'Top, Left, Right walls active · Entire bottom open · 2 Z slots',
+            roomWidth: 500,
+            roomDepth: 500,
+            zSize: 100,
+            corners: { topLeft: false, topRight: false, bottomLeft: false, bottomRight: false },
+            recommendedCorners: { topLeft: true, topRight: true, bottomLeft: false, bottomRight: false },
+            walls: {
+              top: {
+                enabled: true,
+                sections: [
+                  { id: 't4_top', name: 'Top Main', anchor: 'start', startPos: 100, guideStartRatio: 0, guideEndRatio: 1, pieces: [] }
+                ]
+              },
+              left: {
+                enabled: true,
+                sections: [
+                  { id: 't4_left', name: 'Left Main', anchor: 'start', startPos: 100, guideStartRatio: 0, guideEndRatio: 1, pieces: [] }
+                ]
+              },
+              right: {
+                enabled: true,
+                sections: [
+                  { id: 't4_right', name: 'Right Main', anchor: 'start', startPos: 100, guideStartRatio: 0, guideEndRatio: 1, pieces: [] }
+                ]
+              },
+              bottom: {
+                enabled: false,
+                sections: []
+              }
+            }
+          },
+          template5: {
+            id: 'template5',
+            name: 'L-Shape Layout',
+            shortName: '5. L-Shape',
+            description: 'Top and Left walls only · Right & Bottom completely empty · 1 Z slot',
+            roomWidth: 500,
+            roomDepth: 400,
+            zSize: 100,
+            corners: { topLeft: false, topRight: false, bottomLeft: false, bottomRight: false },
+            recommendedCorners: { topLeft: true, topRight: false, bottomLeft: false, bottomRight: false },
+            walls: {
+              top: {
+                enabled: true,
+                sections: [
+                  { id: 't5_top', name: 'Top Arm', anchor: 'start', startPos: 100, guideStartRatio: 0, guideEndRatio: 1, pieces: [] }
+                ]
+              },
+              left: {
+                enabled: true,
+                sections: [
+                  { id: 't5_left', name: 'Left Arm', anchor: 'start', startPos: 100, guideStartRatio: 0, guideEndRatio: 1, pieces: [] }
+                ]
+              },
+              right: {
+                enabled: false,
+                sections: []
+              },
+              bottom: {
+                enabled: false,
+                sections: []
+              }
+            }
+          },
+          custom: {
+            id: 'custom',
+            name: 'Custom Layout Editor',
+            shortName: '6. Custom Layout',
+            description: 'Start completely empty and configure walls, gaps, and Z corners freely',
+            roomWidth: 500,
+            roomDepth: 500,
+            zSize: 100,
+            corners: { topLeft: false, topRight: false, bottomLeft: false, bottomRight: false },
+            recommendedCorners: { topLeft: false, topRight: false, bottomLeft: false, bottomRight: false },
+            walls: {
+              top: { enabled: true, sections: [{ id: 'c_top', name: 'Top Section 1', anchor: 'start', startPos: 0, guideStartRatio: 0, guideEndRatio: 1, pieces: [] }] },
+              left: { enabled: false, sections: [] },
+              right: { enabled: false, sections: [] },
+              bottom: { enabled: false, sections: [] }
+            }
+          }
+        };
+
+        /* =========================================================
+           2. APPLICATION STATE & STORAGE
+           ========================================================= */
+        var state = {
+          project: null,
+          activeWallTab: 'top',
+          savedProjects: [],
+          validationErrors: {} // pieceId -> error string
+        };
+
+        function createProjectFromTemplate(templateId, keepName) {
+          var tpl = TEMPLATES[templateId] || TEMPLATES.template1;
+          var copy = deepClone(tpl);
+          return {
+            id: uid('proj'),
+            name: keepName || ('Majlis - ' + tpl.name),
+            updatedAt: new Date().toISOString(),
+            templateId: tpl.id,
+            roomWidth: copy.roomWidth,
+            roomDepth: copy.roomDepth,
+            zSize: copy.zSize,
+            corners: copy.corners,
+            recommendedCorners: copy.recommendedCorners,
+            walls: copy.walls
+          };
+        }
+
+        function loadFromStorage() {
+          try {
+            var rawSaved = localStorage.getItem(STORAGE_SAVED_KEY);
+            state.savedProjects = rawSaved ? JSON.parse(rawSaved) : [];
+          } catch (e) {
+            state.savedProjects = [];
+          }
+
+          try {
+            var rawCurrent = localStorage.getItem(STORAGE_CURRENT_KEY);
+            if (rawCurrent) {
+              var parsed = JSON.parse(rawCurrent);
+              if (parsed && parsed.walls && parsed.corners) {
+                state.project = parsed;
+                return;
+              }
+            }
+          } catch (e) {
+            // fallback below
+          }
+          state.project = createProjectFromTemplate('template1', 'Majlis Living Room');
+        }
+
+        function persistCurrentProject() {
+          if (!state.project) return;
+          state.project.updatedAt = new Date().toISOString();
+          try {
+            localStorage.setItem(STORAGE_CURRENT_KEY, JSON.stringify(state.project));
+          } catch (e) {
+            // ignore storage quota errors
+          }
+        }
+
+        function persistSavedProjects() {
+          try {
+            localStorage.setItem(STORAGE_SAVED_KEY, JSON.stringify(state.savedProjects));
+          } catch (e) {
+            // ignore
+          }
+        }
+
+        /* =========================================================
+           3. GEOMETRY & CALCULATION ENGINE
+           ========================================================= */
+        function getWallSpan(wallKey, project) {
+          return (wallKey === 'top' || wallKey === 'bottom') ? project.roomWidth : project.roomDepth;
+        }
+
+        function getWallCornerFlags(wallKey, corners) {
+          if (wallKey === 'top') return { start: !!corners.topLeft, end: !!corners.topRight };
+          if (wallKey === 'bottom') return { start: !!corners.bottomLeft, end: !!corners.bottomRight };
+          if (wallKey === 'left') return { start: !!corners.topLeft, end: !!corners.bottomLeft };
+          if (wallKey === 'right') return { start: !!corners.topRight, end: !!corners.bottomRight };
+          return { start: false, end: false };
+        }
+
+        function computeWallGeometry(wallKey, project) {
+          var wall = project.walls[wallKey];
+          var wallSpan = getWallSpan(wallKey, project);
+          var cornerFlags = getWallCornerFlags(wallKey, project.corners);
+          var zSize = getNormalizedZSize(project);
+          var minStart = cornerFlags.start ? zSize : 0;
+          var maxEnd = cornerFlags.end ? (wallSpan - zSize) : wallSpan;
+
+          var computedSections = [];
+          var totalStraightLength = 0;
+          var totalPiecesCount = 0;
+
+          if (wall && wall.enabled && Array.isArray(wall.sections)) {
+            wall.sections.forEach(function (sec) {
+              var secLen = 0;
+              var secPieces = [];
+              (sec.pieces || []).forEach(function (p) {
+                var size = roundCm(Math.min(MAX_PIECE_SIZE, Math.max(0, Number(p.size) || 0)));
+                var qty = Math.max(0, Math.floor(Number(p.qty) || 0));
+                if (size > 0 && qty > 0) {
+                  secLen = roundCm(secLen + size * qty);
+                  totalPiecesCount += qty;
+                  for (var q = 0; q < qty; q++) {
+                    secPieces.push({ id: p.id, size: size, index: q });
+                  }
+                }
+              });
+              totalStraightLength = roundCm(totalStraightLength + secLen);
+
+              var startCm = 0;
+              if (sec.anchor === 'end') {
+                startCm = maxEnd - secLen;
+              } else if (sec.anchor === 'custom') {
+                startCm = Math.max(0, Number(sec.startPos) || 0);
+              } else {
+                startCm = minStart;
+              }
+              var endCm = roundCm(startCm + secLen);
+
+              computedSections.push({
+                raw: sec,
+                startCm: startCm,
+                endCm: endCm,
+                lengthCm: secLen,
+                pieces: secPieces
+              });
+            });
+          }
+
+          // Sort non-empty sections by startCm for gap calculation (never compute GAP when all sections are empty!)
+          var sorted = computedSections.slice().sort(function (a, b) {
+            return a.startCm - b.startCm;
+          });
+          var nonEmptySorted = sorted.filter(function (s) { return s.lengthCm > 0; });
+
+          // Identify intentional empty gaps along active wall ONLY when pieces are placed
+          var gaps = [];
+          var cursor = minStart;
+          if (wall && wall.enabled && nonEmptySorted.length > 0) {
+            nonEmptySorted.forEach(function (sec) {
+              if (sec.startCm > cursor + 5) {
+                gaps.push({ startCm: cursor, endCm: sec.startCm, lengthCm: sec.startCm - cursor });
+              }
+              if (sec.endCm > cursor) cursor = sec.endCm;
+            });
+            if (maxEnd > cursor + 5) {
+              gaps.push({ startCm: cursor, endCm: maxEnd, lengthCm: maxEnd - cursor });
+            }
+          }
+
+          // Check overflow / overlap warnings
+          var warnings = [];
+          sorted.forEach(function (sec, idx) {
+            if (cornerFlags.start && sec.startCm < zSize - 1) {
+              warnings.push('Section "' + sec.raw.name + '" overlaps start Z corner (' + zSize + ' cm).');
+            }
+            if (cornerFlags.end && sec.endCm > wallSpan - zSize + 1) {
+              warnings.push('Section "' + sec.raw.name + '" extends into end Z corner or exceeds wall (' + wallSpan + ' cm).');
+            } else if (!cornerFlags.end && sec.endCm > wallSpan + 1) {
+              warnings.push('Section "' + sec.raw.name + '" exceeds ' + wallKey.toUpperCase() + ' wall length (' + wallSpan + ' cm).');
+            }
+            if (idx > 0 && sec.startCm < sorted[idx - 1].endCm - 1) {
+              warnings.push('Sections on ' + wallKey.toUpperCase() + ' wall overlap each other.');
+            }
+          });
+
+          return {
+            wallKey: wallKey,
+            enabled: !!(wall && wall.enabled),
+            wallSpan: wallSpan,
+            cornerFlags: cornerFlags,
+            sections: computedSections,
+            sortedSections: sorted,
+            gaps: gaps,
+            totalStraightLength: totalStraightLength,
+            totalPiecesCount: totalPiecesCount,
+            warnings: warnings
+          };
+        }
+
+        function computeCalculations(project) {
+          var counts = {
+            200: 0,
+            183: 0,
+            150: 0,
+            125: 0,
+            100: 0
+          };
+          var sizeMap = {}; // all sizes -> qty
+          var customMap = {}; // non-standard sizes -> qty
+          var totalCustomCount = 0;
+          var totalStraightPieces = 0;
+          var straightTotalLength = 0;
+          var wallGeometries = {};
+          var allWarnings = [];
+          var openSectionsCount = 0;
+
+          ['top', 'left', 'right', 'bottom'].forEach(function (wallKey) {
+            var geo = computeWallGeometry(wallKey, project);
+            wallGeometries[wallKey] = geo;
+            if (!geo.enabled || geo.sections.length === 0) {
+              openSectionsCount += 1;
+            } else {
+              openSectionsCount += geo.gaps.length;
+            }
+            geo.warnings.forEach(function (w) { allWarnings.push(w); });
+
+            var wall = project.walls[wallKey];
+            if (wall && wall.enabled) {
+              (wall.sections || []).forEach(function (sec) {
+                (sec.pieces || []).forEach(function (p) {
+                  var size = roundCm(Number(p.size) || 0);
+                  var qty = Math.max(0, Math.floor(Number(p.qty) || 0));
+                  if (size <= 0 || size > MAX_PIECE_SIZE || qty <= 0) return;
+
+                  totalStraightPieces += qty;
+                  straightTotalLength = roundCm(straightTotalLength + size * qty);
+                  sizeMap[size] = (sizeMap[size] || 0) + qty;
+
+                  if (counts.hasOwnProperty(size)) {
+                    counts[size] += qty;
+                  } else {
+                    totalCustomCount += qty;
+                    customMap[size] = (customMap[size] || 0) + qty;
+                  }
+                });
+              });
+            }
+          });
+
+          var zQuantity = 0;
+          ['topLeft', 'topRight', 'bottomLeft', 'bottomRight'].forEach(function (ck) {
+            if (project.corners[ck]) zQuantity += 1;
+          });
+          var zSize = getNormalizedZSize(project);
+          var zTotalLength = roundCm(zSize * zQuantity);
+          var combinedTotalLength = roundCm(straightTotalLength + zTotalLength);
+
+          var customSizes = Object.keys(customMap)
+            .map(function (k) { return { size: Number(k), qty: customMap[k] }; })
+            .sort(function (a, b) { return b.size - a.size; });
+
+          var sizeGroups = Object.keys(sizeMap)
+            .map(function (k) { return { size: Number(k), qty: sizeMap[k] }; })
+            .sort(function (a, b) { return b.size - a.size; });
+
+          return {
+            counts: counts,
+            customSizes: customSizes,
+            sizeGroups: sizeGroups,
+            totalCustomCount: totalCustomCount,
+            totalStraightPieces: totalStraightPieces,
+            straightTotalLength: straightTotalLength,
+            zQuantity: zQuantity,
+            zSize: zSize,
+            zTotalLength: zTotalLength,
+            combinedTotalLength: combinedTotalLength,
+            openSectionsCount: openSectionsCount,
+            wallGeometries: wallGeometries,
+            warnings: allWarnings
+          };
+        }
+
+        function formatMeters(cm) {
+          return (cm / 100).toFixed(2) + ' m';
+        }
+
+        function getPieceColor(size) {
+          var s = Number(size) || 0;
+          if (s >= 200) return SIZE_COLORS[200];
+          if (s >= 180) return SIZE_COLORS[183];
+          if (s >= 150) return SIZE_COLORS[150];
+          if (s >= 125) return SIZE_COLORS[125];
+          if (s >= 100) return SIZE_COLORS[100];
+          return SIZE_COLORS.custom;
+        }
+
+        /* =========================================================
+           4. RENDERING: TEMPLATES MINI PREVIEWS & CARDS
+           ========================================================= */
+        function getTemplateMiniSvg(tplId) {
+          var w = 100, h = 62;
+          var s = 'stroke="#1d4ed8" stroke-width="5" stroke-linecap="square" fill="none"';
+          var z = 'fill="#f59e0b"';
+          if (tplId === 'template1') {
+            return '<svg viewBox="0 0 100 62" width="100%" height="100%">' +
+              '<line x1="14" y1="10" x2="86" y2="10" ' + s + '/>' +
+              '<line x1="14" y1="10" x2="14" y2="52" ' + s + '/>' +
+              '<line x1="86" y1="10" x2="86" y2="52" ' + s + '/>' +
+              '<line x1="14" y1="52" x2="38" y2="52" ' + s + '/>' +
+              '<line x1="62" y1="52" x2="86" y2="52" ' + s + '/>' +
+              '<rect x="10" y="6" width="8" height="8" ' + z + '/>' +
+              '<rect x="82" y="6" width="8" height="8" ' + z + '/>' +
+              '<rect x="10" y="48" width="8" height="8" ' + z + '/>' +
+              '<rect x="82" y="48" width="8" height="8" ' + z + '/>' +
+              '</svg>';
+          }
+          if (tplId === 'template2') {
+            return '<svg viewBox="0 0 100 62" width="100%" height="100%">' +
+              '<line x1="14" y1="10" x2="86" y2="10" ' + s + '/>' +
+              '<line x1="14" y1="10" x2="14" y2="52" ' + s + '/>' +
+              '<line x1="86" y1="10" x2="86" y2="34" ' + s + '/>' +
+              '<line x1="14" y1="52" x2="40" y2="52" ' + s + '/>' +
+              '<rect x="10" y="6" width="8" height="8" ' + z + '/>' +
+              '<rect x="82" y="6" width="8" height="8" ' + z + '/>' +
+              '<rect x="10" y="48" width="8" height="8" ' + z + '/>' +
+              '</svg>';
+          }
+          if (tplId === 'template3') {
+            return '<svg viewBox="0 0 100 62" width="100%" height="100%">' +
+              '<line x1="14" y1="10" x2="86" y2="10" ' + s + '/>' +
+              '<line x1="14" y1="10" x2="14" y2="36" ' + s + '/>' +
+              '<line x1="86" y1="10" x2="86" y2="52" ' + s + '/>' +
+              '<line x1="56" y1="52" x2="86" y2="52" ' + s + '/>' +
+              '<rect x="10" y="6" width="8" height="8" ' + z + '/>' +
+              '<rect x="82" y="6" width="8" height="8" ' + z + '/>' +
+              '<rect x="82" y="48" width="8" height="8" ' + z + '/>' +
+              '</svg>';
+          }
+          if (tplId === 'template4') {
+            return '<svg viewBox="0 0 100 62" width="100%" height="100%">' +
+              '<line x1="14" y1="10" x2="86" y2="10" ' + s + '/>' +
+              '<line x1="14" y1="10" x2="14" y2="52" ' + s + '/>' +
+              '<line x1="86" y1="10" x2="86" y2="52" ' + s + '/>' +
+              '<rect x="10" y="6" width="8" height="8" ' + z + '/>' +
+              '<rect x="82" y="6" width="8" height="8" ' + z + '/>' +
+              '</svg>';
+          }
+          if (tplId === 'template5') {
+            return '<svg viewBox="0 0 100 62" width="100%" height="100%">' +
+              '<line x1="16" y1="12" x2="84" y2="12" ' + s + '/>' +
+              '<line x1="16" y1="12" x2="16" y2="52" ' + s + '/>' +
+              '<rect x="12" y="8" width="8" height="8" ' + z + '/>' +
+              '</svg>';
+          }
+          return '<svg viewBox="0 0 100 62" width="100%" height="100%">' +
+            '<line x1="14" y1="10" x2="86" y2="10" stroke="#4f46e5" stroke-width="5" stroke-dasharray="16 6" fill="none"/>' +
+            '<line x1="14" y1="10" x2="14" y2="48" stroke="#4f46e5" stroke-width="5" fill="none"/>' +
+            '<line x1="86" y1="22" x2="86" y2="44" stroke="#0d9488" stroke-width="5" fill="none"/>' +
+            '<rect x="10" y="6" width="8" height="8" ' + z + '/>' +
+            '</svg>';
+        }
+
+        function renderTemplatesGrid() {
+          var container = document.getElementById('templates-grid');
+          var order = ['template1', 'template2', 'template3', 'template4', 'template5', 'custom'];
+          container.innerHTML = order.map(function (id) {
+            var tpl = TEMPLATES[id];
+            var isActive = state.project.templateId === id;
+            return '<button type="button" class="template-card' + (isActive ? ' active' : '') + '" data-template-id="' + id + '">' +
+              '<div class="template-preview">' + getTemplateMiniSvg(id) + '</div>' +
+              '<div class="template-title">' + escapeHtml(tpl.shortName) + '</div>' +
+              '</button>';
+          }).join('');
+        }
+
+        /* =========================================================
+           5. RENDERING: 2D SVG ARCHITECTURAL FLOOR PLAN
+           ========================================================= */
+        function renderFloorPlan(calc) {
+          var svg = document.getElementById('floorplan-svg');
+          var project = state.project;
+          var W = Math.max(150, Number(project.roomWidth) || 500);
+          var D = Math.max(150, Number(project.roomDepth) || 500);
+          var zSize = calc.zSize;
+          var sofaDepth = Math.min(90, Math.max(55, Math.round(Math.min(W, D) * 0.16)));
+
+          // Determine bounding extent in cm so overflowed sections never clip
+          var maxRightCm = W;
+          var maxBottomCm = D;
+          ['top', 'bottom'].forEach(function (wk) {
+            calc.wallGeometries[wk].sections.forEach(function (s) {
+              if (s.endCm > maxRightCm) maxRightCm = s.endCm;
+            });
+          });
+          ['left', 'right'].forEach(function (wk) {
+            calc.wallGeometries[wk].sections.forEach(function (s) {
+              if (s.endCm > maxBottomCm) maxBottomCm = s.endCm;
+            });
+          });
+
+          var svgW = 880;
+          var svgH = 660;
+          var padLeft = 148;
+          var padRight = 148;
+          var padTop = 104;
+          var padBottom = 104;
+          var availW = svgW - padLeft - padRight;
+          var availH = svgH - padTop - padBottom;
+
+          var scale = Math.min(availW / maxRightCm, availH / maxBottomCm);
+          var drawW = W * scale;
+          var drawD = D * scale;
+          var ox = padLeft + (availW - maxRightCm * scale) / 2;
+          var oy = padTop + (availH - maxBottomCm * scale) / 2;
+
+          function sx(cm) { return ox + cm * scale; }
+          function sy(cm) { return oy + cm * scale; }
+          function sl(cm) { return cm * scale; }
+
+          var diagramInputWidgets = [];
+
+          var parts = [];
+
+          // Subtle architectural grid
+          parts.push('<defs>' +
+            '<pattern id="blueprintGrid" width="' + Math.max(18, sl(50)) + '" height="' + Math.max(18, sl(50)) + '" patternUnits="userSpaceOnUse">' +
+            '<path d="M ' + Math.max(18, sl(50)) + ' 0 L 0 0 0 ' + Math.max(18, sl(50)) + '" fill="none" stroke="rgba(148,163,184,0.18)" stroke-width="1"/>' +
+            '</pattern>' +
+            '<pattern id="gapHatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">' +
+            '<line x1="0" y1="0" x2="0" y2="8" stroke="#94a3b8" stroke-width="2" stroke-opacity="0.45"/>' +
+            '</pattern>' +
+            '</defs>');
+          parts.push('<rect x="0" y="0" width="' + svgW + '" height="' + svgH + '" fill="url(#blueprintGrid)"/>');
+
+          // Helper to draw outer room structural wall lines ONLY where walls/sections exist (never a closed box for open templates!)
+          var wallLineStyle = 'stroke="#0f172a" stroke-width="4" stroke-linecap="square"';
+          var dPx = sl(sofaDepth);
+
+          // Draw structural wall backing lines strictly along active sections + active corners (plus guide outlines when sections are empty!)
+          function drawWallBackdrop(wallKey) {
+            var geo = calc.wallGeometries[wallKey];
+            var wallObj = project.walls[wallKey];
+            var recCorners = project.recommendedCorners || (TEMPLATES[project.templateId] && TEMPLATES[project.templateId].recommendedCorners) || {};
+            var hasRecStart = (wallKey === 'top' && recCorners.topLeft) || (wallKey === 'bottom' && recCorners.bottomLeft) || (wallKey === 'left' && recCorners.topLeft) || (wallKey === 'right' && recCorners.topRight);
+            var hasRecEnd = (wallKey === 'top' && recCorners.topRight) || (wallKey === 'bottom' && recCorners.bottomRight) || (wallKey === 'left' && recCorners.bottomLeft) || (wallKey === 'right' && recCorners.bottomRight);
+
+            if (!geo.enabled && !geo.cornerFlags.start && !geo.cornerFlags.end) {
+              // Completely open wall: subtle open indicator
+              if (wallKey === 'bottom') {
+                parts.push('<text x="' + (ox + drawW / 2) + '" y="' + (oy + drawD + 22) + '" text-anchor="middle" font-size="11" font-weight="600" fill="#94a3b8">OPEN</text>');
+              } else if (wallKey === 'right') {
+                parts.push('<text x="' + (ox + drawW + 22) + '" y="' + (oy + drawD / 2) + '" text-anchor="middle" font-size="11" font-weight="600" fill="#94a3b8" transform="rotate(90 ' + (ox + drawW + 22) + ' ' + (oy + drawD / 2) + ')">OPEN</text>');
+              } else if (wallKey === 'left') {
+                parts.push('<text x="' + (ox - 22) + '" y="' + (oy + drawD / 2) + '" text-anchor="middle" font-size="11" font-weight="600" fill="#94a3b8" transform="rotate(-90 ' + (ox - 22) + ' ' + (oy + drawD / 2) + ')">OPEN</text>');
+              } else if (wallKey === 'top') {
+                parts.push('<text x="' + (ox + drawW / 2) + '" y="' + (oy - 18) + '" text-anchor="middle" font-size="11" font-weight="600" fill="#94a3b8">OPEN</text>');
+              }
+              return;
+            }
+
+            // Draw structural wall segments for each active section and corner (or template guide spans when empty)
+            var spans = [];
+            var emptyGuides = [];
+            if (geo.cornerFlags.start) spans.push([0, zSize]);
+            if (geo.cornerFlags.end) spans.push([geo.wallSpan - zSize, geo.wallSpan]);
+            geo.sortedSections.forEach(function (sec) {
+              var r0 = (typeof sec.raw.guideStartRatio === 'number') ? sec.raw.guideStartRatio : 0;
+              var r1 = (typeof sec.raw.guideEndRatio === 'number') ? sec.raw.guideEndRatio : 1;
+              var gStart = Math.round(geo.wallSpan * r0);
+              var gEnd = Math.round(geo.wallSpan * r1);
+
+              // Clamp empty guides away from corner Z slots so Empty box never overlaps +Z!
+              if ((hasRecStart || geo.cornerFlags.start) && sec.raw.anchor !== 'end' && r0 === 0) {
+                gStart = Math.max(gStart, zSize);
+              }
+              if ((hasRecEnd || geo.cornerFlags.end) && (sec.raw.anchor === 'end' || r1 === 1)) {
+                gEnd = Math.min(gEnd, geo.wallSpan - zSize);
+              }
+
+              if (sec.lengthCm > 0) {
+                spans.push([sec.startCm, sec.endCm]);
+                // Register overlay box position using actual section center (including touching Z for clean centering)
+                var boxStart = sec.startCm;
+                var boxEnd = sec.endCm;
+                if (geo.cornerFlags.start && sec.startCm <= zSize + 2) boxStart = 0;
+                if (geo.cornerFlags.end && sec.endCm >= geo.wallSpan - zSize - 2) boxEnd = geo.wallSpan;
+                diagramInputWidgets.push({ wallKey: wallKey, section: sec.raw, compSec: sec, spanStart: boxStart, spanEnd: boxEnd });
+              } else if (wallObj && wallObj.enabled) {
+                if (gEnd > gStart) {
+                  spans.push([gStart, gEnd]);
+                  emptyGuides.push({ startCm: gStart, endCm: gEnd, name: sec.raw.name });
+                }
+                var fullStart = Math.round(geo.wallSpan * r0);
+                var fullEnd = Math.round(geo.wallSpan * r1);
+                diagramInputWidgets.push({ wallKey: wallKey, section: sec.raw, compSec: sec, spanStart: fullStart, spanEnd: fullEnd });
+              }
+            });
+
+            // Ensure corner structural wall lines connect cleanly when empty
+            if (hasRecStart || geo.cornerFlags.start) spans.push([0, zSize]);
+            if (hasRecEnd || geo.cornerFlags.end) spans.push([geo.wallSpan - zSize, geo.wallSpan]);
+
+            spans.forEach(function (sp) {
+              if (wallKey === 'top') {
+                parts.push('<line x1="' + sx(sp[0]) + '" y1="' + oy + '" x2="' + sx(sp[1]) + '" y2="' + oy + '" ' + wallLineStyle + '/>');
+              } else if (wallKey === 'bottom') {
+                parts.push('<line x1="' + sx(sp[0]) + '" y1="' + (oy + drawD) + '" x2="' + sx(sp[1]) + '" y2="' + (oy + drawD) + '" ' + wallLineStyle + '/>');
+              } else if (wallKey === 'left') {
+                parts.push('<line x1="' + ox + '" y1="' + sy(sp[0]) + '" x2="' + ox + '" y2="' + sy(sp[1]) + '" ' + wallLineStyle + '/>');
+              } else if (wallKey === 'right') {
+                parts.push('<line x1="' + (ox + drawW) + '" y1="' + sy(sp[0]) + '" x2="' + (ox + drawW) + '" y2="' + sy(sp[1]) + '" ' + wallLineStyle + '/>');
+              }
+            });
+
+            // Draw clickable empty section guide boxes so the 5 shapes stay clear when pieces = []
+            emptyGuides.forEach(function (eg) {
+              var gLenPx = sl(eg.endCm - eg.startCm);
+              if (gLenPx < 16) return;
+              if (wallKey === 'top') {
+                parts.push('<g class="svg-wall-hit" data-wall="top" style="cursor:pointer;">');
+                parts.push('<rect x="' + sx(eg.startCm) + '" y="' + oy + '" width="' + gLenPx + '" height="' + dPx + '" rx="3" fill="rgba(226,232,240,0.35)" stroke="#94a3b8" stroke-dasharray="6 4"/>');
+                parts.push('<text x="' + (sx(eg.startCm) + gLenPx / 2) + '" y="' + (oy + dPx / 2 + 4) + '" text-anchor="middle" font-size="11" font-weight="600" fill="#64748b">Empty · Add size</text></g>');
+              } else if (wallKey === 'bottom') {
+                parts.push('<g class="svg-wall-hit" data-wall="bottom" style="cursor:pointer;">');
+                parts.push('<rect x="' + sx(eg.startCm) + '" y="' + (oy + drawD - dPx) + '" width="' + gLenPx + '" height="' + dPx + '" rx="3" fill="rgba(226,232,240,0.35)" stroke="#94a3b8" stroke-dasharray="6 4"/>');
+                parts.push('<text x="' + (sx(eg.startCm) + gLenPx / 2) + '" y="' + (oy + drawD - dPx / 2 + 4) + '" text-anchor="middle" font-size="11" font-weight="600" fill="#64748b">Empty · Add size</text></g>');
+              } else if (wallKey === 'left') {
+                parts.push('<g class="svg-wall-hit" data-wall="left" style="cursor:pointer;">');
+                parts.push('<rect x="' + ox + '" y="' + sy(eg.startCm) + '" width="' + dPx + '" height="' + gLenPx + '" rx="3" fill="rgba(226,232,240,0.35)" stroke="#94a3b8" stroke-dasharray="6 4"/>');
+                parts.push('<text x="' + (ox + dPx / 2) + '" y="' + (sy(eg.startCm) + gLenPx / 2 + 4) + '" text-anchor="middle" font-size="10.5" font-weight="600" fill="#64748b">Empty</text></g>');
+              } else if (wallKey === 'right') {
+                parts.push('<g class="svg-wall-hit" data-wall="right" style="cursor:pointer;">');
+                parts.push('<rect x="' + (ox + drawW - dPx) + '" y="' + sy(eg.startCm) + '" width="' + dPx + '" height="' + gLenPx + '" rx="3" fill="rgba(226,232,240,0.35)" stroke="#94a3b8" stroke-dasharray="6 4"/>');
+                parts.push('<text x="' + (ox + drawW - dPx / 2) + '" y="' + (sy(eg.startCm) + gLenPx / 2 + 4) + '" text-anchor="middle" font-size="10.5" font-weight="600" fill="#64748b">Empty</text></g>');
+              }
+            });
+
+            // Draw intentional empty gaps clearly (both when filled and for split-bottom Template 1 when empty)
+            if (geo.gaps.length > 0) {
+              geo.gaps.forEach(function (gap) {
+                var gLenPx = sl(gap.lengthCm);
+                if (gLenPx < 8) return;
+                if (wallKey === 'top') {
+                  parts.push('<rect x="' + sx(gap.startCm) + '" y="' + oy + '" width="' + gLenPx + '" height="' + dPx + '" fill="url(#gapHatch)" stroke="#cbd5e1" stroke-dasharray="4 4"/>');
+                  parts.push('<text x="' + (sx(gap.startCm) + gLenPx / 2) + '" y="' + (oy + dPx / 2 + 4) + '" text-anchor="middle" font-size="11" font-weight="700" fill="#475569">GAP ' + Math.round(gap.lengthCm) + '</text>');
+                } else if (wallKey === 'bottom') {
+                  parts.push('<rect x="' + sx(gap.startCm) + '" y="' + (oy + drawD - dPx) + '" width="' + gLenPx + '" height="' + dPx + '" fill="url(#gapHatch)" stroke="#cbd5e1" stroke-dasharray="4 4"/>');
+                  parts.push('<text x="' + (sx(gap.startCm) + gLenPx / 2) + '" y="' + (oy + drawD - dPx / 2 + 4) + '" text-anchor="middle" font-size="11" font-weight="700" fill="#475569">GAP ' + Math.round(gap.lengthCm) + '</text>');
+                } else if (wallKey === 'left') {
+                  parts.push('<rect x="' + ox + '" y="' + sy(gap.startCm) + '" width="' + dPx + '" height="' + gLenPx + '" fill="url(#gapHatch)" stroke="#cbd5e1" stroke-dasharray="4 4"/>');
+                  parts.push('<text x="' + (ox + dPx / 2) + '" y="' + (sy(gap.startCm) + gLenPx / 2 + 4) + '" text-anchor="middle" font-size="11" font-weight="700" fill="#475569">GAP ' + Math.round(gap.lengthCm) + '</text>');
+                } else if (wallKey === 'right') {
+                  parts.push('<rect x="' + (ox + drawW - dPx) + '" y="' + sy(gap.startCm) + '" width="' + dPx + '" height="' + gLenPx + '" fill="url(#gapHatch)" stroke="#cbd5e1" stroke-dasharray="4 4"/>');
+                  parts.push('<text x="' + (ox + drawW - dPx / 2) + '" y="' + (sy(gap.startCm) + gLenPx / 2 + 4) + '" text-anchor="middle" font-size="11" font-weight="700" fill="#475569">GAP ' + Math.round(gap.lengthCm) + '</text>');
+                }
+              });
+            } else if (emptyGuides.length === 2 && wallKey === 'bottom') {
+              // Show clear central gap label between Template 1's two bottom guides when empty
+              var gapStart = emptyGuides[0].endCm;
+              var gapEnd = emptyGuides[1].startCm;
+              var gPx = sl(gapEnd - gapStart);
+              if (gPx > 12) {
+                parts.push('<rect x="' + sx(gapStart) + '" y="' + (oy + drawD - dPx) + '" width="' + gPx + '" height="' + dPx + '" fill="url(#gapHatch)" stroke="#cbd5e1" stroke-dasharray="4 4"/>');
+                parts.push('<text x="' + (sx(gapStart) + gPx / 2) + '" y="' + (oy + drawD - dPx / 2 + 4) + '" text-anchor="middle" font-size="11" font-weight="700" fill="#475569">OPEN GAP</text>');
+              }
+            }
+          }
+
+          ['top', 'left', 'right', 'bottom'].forEach(drawWallBackdrop);
+
+          // Draw Straight Sofa Pieces per Wall
+          function drawWallPieces(wallKey) {
+            var geo = calc.wallGeometries[wallKey];
+            if (!geo.enabled) return;
+
+            var backPx = Math.max(8, dPx * 0.22);
+
+            geo.sections.forEach(function (sec) {
+              var cursorCm = sec.startCm;
+              sec.pieces.forEach(function (piece) {
+                var pLenPx = sl(piece.size);
+                var colors = getPieceColor(piece.size);
+                var pieceLabel = formatCm(piece.size);
+                var seam = 1.5;
+
+                if (wallKey === 'top') {
+                  var x = sx(cursorCm) + seam / 2;
+                  var w = Math.max(4, pLenPx - seam);
+                  parts.push('<g class="svg-wall-hit" data-wall="top" style="cursor:pointer;">');
+                  parts.push('<rect x="' + x + '" y="' + oy + '" width="' + w + '" height="' + dPx + '" rx="3" fill="' + colors.fill + '" stroke="' + colors.stroke + '" stroke-width="1.2"/>');
+                  parts.push('<rect x="' + x + '" y="' + oy + '" width="' + w + '" height="' + backPx + '" rx="2" fill="' + colors.back + '"/>');
+                  parts.push('<text x="' + (x + w / 2) + '" y="' + (oy + backPx + (dPx - backPx) / 2 + 4) + '" text-anchor="middle" font-size="' + (w < 38 ? 9.5 : 11.5) + '" font-weight="700" fill="' + colors.text + '">' + pieceLabel + '</text>');
+                  parts.push('</g>');
+                } else if (wallKey === 'bottom') {
+                  var x = sx(cursorCm) + seam / 2;
+                  var w = Math.max(4, pLenPx - seam);
+                  var y = oy + drawD - dPx;
+                  parts.push('<g class="svg-wall-hit" data-wall="bottom" style="cursor:pointer;">');
+                  parts.push('<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + dPx + '" rx="3" fill="' + colors.fill + '" stroke="' + colors.stroke + '" stroke-width="1.2"/>');
+                  parts.push('<rect x="' + x + '" y="' + (oy + drawD - backPx) + '" width="' + w + '" height="' + backPx + '" rx="2" fill="' + colors.back + '"/>');
+                  parts.push('<text x="' + (x + w / 2) + '" y="' + (y + (dPx - backPx) / 2 + 4) + '" text-anchor="middle" font-size="' + (w < 38 ? 9.5 : 11.5) + '" font-weight="700" fill="' + colors.text + '">' + pieceLabel + '</text>');
+                  parts.push('</g>');
+                } else if (wallKey === 'left') {
+                  var y = sy(cursorCm) + seam / 2;
+                  var h = Math.max(4, pLenPx - seam);
+                  parts.push('<g class="svg-wall-hit" data-wall="left" style="cursor:pointer;">');
+                  parts.push('<rect x="' + ox + '" y="' + y + '" width="' + dPx + '" height="' + h + '" rx="3" fill="' + colors.fill + '" stroke="' + colors.stroke + '" stroke-width="1.2"/>');
+                  parts.push('<rect x="' + ox + '" y="' + y + '" width="' + backPx + '" height="' + h + '" rx="2" fill="' + colors.back + '"/>');
+                  parts.push('<text x="' + (ox + backPx + (dPx - backPx) / 2) + '" y="' + (y + h / 2 + 4) + '" text-anchor="middle" font-size="' + (h < 38 ? 9.5 : 11.5) + '" font-weight="700" fill="' + colors.text + '">' + pieceLabel + '</text>');
+                  parts.push('</g>');
+                } else if (wallKey === 'right') {
+                  var y = sy(cursorCm) + seam / 2;
+                  var h = Math.max(4, pLenPx - seam);
+                  var x = ox + drawW - dPx;
+                  parts.push('<g class="svg-wall-hit" data-wall="right" style="cursor:pointer;">');
+                  parts.push('<rect x="' + x + '" y="' + y + '" width="' + dPx + '" height="' + h + '" rx="3" fill="' + colors.fill + '" stroke="' + colors.stroke + '" stroke-width="1.2"/>');
+                  parts.push('<rect x="' + (ox + drawW - backPx) + '" y="' + y + '" width="' + backPx + '" height="' + h + '" rx="2" fill="' + colors.back + '"/>');
+                  parts.push('<text x="' + (x + (dPx - backPx) / 2) + '" y="' + (y + h / 2 + 4) + '" text-anchor="middle" font-size="' + (h < 38 ? 9.5 : 11.5) + '" font-weight="700" fill="' + colors.text + '">' + pieceLabel + '</text>');
+                  parts.push('</g>');
+                }
+
+                cursorCm += piece.size;
+              });
+            });
+          }
+
+          ['top', 'left', 'right', 'bottom'].forEach(drawWallPieces);
+
+          // Draw Distinct L-Shaped Z Corner Pieces (and clickable dashed Z slots if recommended but not yet added)
+          var zPx = sl(zSize);
+          var zArm = Math.max(dPx + 2, zPx * 0.96);
+          var zc = SIZE_COLORS.z;
+          var recCornersMap = project.recommendedCorners || (TEMPLATES[project.templateId] && TEMPLATES[project.templateId].recommendedCorners) || {};
+
+          function drawZCorner(cornerKey) {
+            if (zSize <= 0) return;
+            var isOn = !!project.corners[cornerKey];
+            var isRec = !!recCornersMap[cornerKey];
+            if (!isOn && !isRec) return;
+
+            var d = '';
+            var lx = 0, ly = 0;
+            if (cornerKey === 'topLeft') {
+              d = 'M ' + ox + ' ' + oy +
+                ' L ' + (ox + zArm) + ' ' + oy +
+                ' L ' + (ox + zArm) + ' ' + (oy + dPx) +
+                ' L ' + (ox + dPx) + ' ' + (oy + dPx) +
+                ' L ' + (ox + dPx) + ' ' + (oy + zArm) +
+                ' L ' + ox + ' ' + (oy + zArm) + ' Z';
+              lx = ox + dPx * 0.52;
+              ly = oy + dPx * 0.56;
+            } else if (cornerKey === 'topRight') {
+              var rx = ox + drawW;
+              d = 'M ' + rx + ' ' + oy +
+                ' L ' + (rx - zArm) + ' ' + oy +
+                ' L ' + (rx - zArm) + ' ' + (oy + dPx) +
+                ' L ' + (rx - dPx) + ' ' + (oy + dPx) +
+                ' L ' + (rx - dPx) + ' ' + (oy + zArm) +
+                ' L ' + rx + ' ' + (oy + zArm) + ' Z';
+              lx = rx - dPx * 0.52;
+              ly = oy + dPx * 0.56;
+            } else if (cornerKey === 'bottomLeft') {
+              var by = oy + drawD;
+              d = 'M ' + ox + ' ' + by +
+                ' L ' + (ox + zArm) + ' ' + by +
+                ' L ' + (ox + zArm) + ' ' + (by - dPx) +
+                ' L ' + (ox + dPx) + ' ' + (by - dPx) +
+                ' L ' + (ox + dPx) + ' ' + (by - zArm) +
+                ' L ' + ox + ' ' + (by - zArm) + ' Z';
+              lx = ox + dPx * 0.52;
+              ly = by - dPx * 0.44;
+            } else if (cornerKey === 'bottomRight') {
+              var rx2 = ox + drawW;
+              var by2 = oy + drawD;
+              d = 'M ' + rx2 + ' ' + by2 +
+                ' L ' + (rx2 - zArm) + ' ' + by2 +
+                ' L ' + (rx2 - zArm) + ' ' + (by2 - dPx) +
+                ' L ' + (rx2 - dPx) + ' ' + (by2 - dPx) +
+                ' L ' + (rx2 - dPx) + ' ' + (by2 - zArm) +
+                ' L ' + rx2 + ' ' + (by2 - zArm) + ' Z';
+              lx = rx2 - dPx * 0.52;
+              ly = by2 - dPx * 0.44;
+            }
+
+            if (isOn) {
+              parts.push('<g data-svg-corner="' + cornerKey + '" style="cursor:pointer;">');
+              parts.push('<path d="' + d + '" fill="' + zc.fill + '" stroke="' + zc.stroke + '" stroke-width="2" stroke-linejoin="round"/>');
+              parts.push('<text x="' + lx + '" y="' + ly + '" text-anchor="middle" dominant-baseline="middle" font-size="11" font-weight="800" fill="' + zc.text + '">Z ' + zSize + '</text>');
+              parts.push('</g>');
+            } else if (isRec) {
+              parts.push('<g data-svg-corner="' + cornerKey + '" style="cursor:pointer;">');
+              parts.push('<path d="' + d + '" fill="rgba(254,243,199,0.28)" stroke="#d97706" stroke-width="1.4" stroke-dasharray="4 3" stroke-linejoin="round"/>');
+              parts.push('<text x="' + lx + '" y="' + ly + '" text-anchor="middle" dominant-baseline="middle" font-size="10.5" font-weight="700" fill="#b45309">+Z</text>');
+              parts.push('</g>');
+            }
+          }
+
+          ['topLeft', 'topRight', 'bottomLeft', 'bottomRight'].forEach(drawZCorner);
+
+          // Architectural Wall Labels & Dimension Lines (only on closed/active full spans, never over split/open gaps)
+          function drawDimLine(x1, y1, x2, y2, label, subLabel, textX, textY, rotateDeg) {
+            parts.push('<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="#cbd5e1" stroke-width="1"/>');
+            parts.push('<circle cx="' + x1 + '" cy="' + y1 + '" r="2.5" fill="#64748b"/>');
+            parts.push('<circle cx="' + x2 + '" cy="' + y2 + '" r="2.5" fill="#64748b"/>');
+            if (label) {
+              var t = rotateDeg ? ' transform="rotate(' + rotateDeg + ' ' + textX + ' ' + textY + ')"' : '';
+              parts.push('<text x="' + textX + '" y="' + textY + '" text-anchor="middle" font-size="11" font-weight="700" fill="#475569"' + t + '>' + label + '</text>');
+            }
+          }
+
+          var topGeo = calc.wallGeometries.top;
+          if (topGeo.enabled) {
+            drawDimLine(ox, oy - 16, ox + drawW, oy - 16, '', '', ox + drawW / 2, oy - 22, 0);
+          }
+
+          var leftGeo = calc.wallGeometries.left;
+          if (leftGeo.enabled) {
+            drawDimLine(ox - 16, oy, ox - 16, oy + drawD, '', '', ox - 24, oy + drawD / 2, -90);
+          }
+
+          var rightGeo = calc.wallGeometries.right;
+          if (rightGeo.enabled) {
+            drawDimLine(ox + drawW + 16, oy, ox + drawW + 16, oy + drawD, '', '', ox + drawW + 24, oy + drawD / 2, 90);
+          }
+
+          // Center calculation summary inside room space (matching hand-drawn sketch style)
+          var centerX = ox + drawW / 2;
+          var centerY = oy + drawD / 2;
+          var summaryLines = [];
+
+          calc.sizeGroups.forEach(function (sg) {
+            var isOptimal = sg.size >= 200 && sg.size <= MAX_PIECE_SIZE;
+            summaryLines.push({
+              text: formatCm(sg.size) + ' = ' + sg.qty,
+              color: isOptimal ? '#1d4ed8' : '#0f172a',
+              weight: '700',
+              size: 15
+            });
+          });
+          if (calc.zQuantity > 0) {
+            summaryLines.push({ text: 'Z = ' + calc.zQuantity + ' (' + formatCm(calc.zSize) + ' cm)', color: '#b45309', weight: '700', size: 15 });
+          }
+
+          if (summaryLines.length === 0) {
+            var tplObj = TEMPLATES[project.templateId] || TEMPLATES.custom;
+            parts.push('<text x="' + centerX + '" y="' + (centerY - 4) + '" text-anchor="middle" font-size="13" font-weight="700" fill="#64748b">' + escapeHtml(tplObj.shortName) + '</text>');
+            parts.push('<text x="' + centerX + '" y="' + (centerY + 15) + '" text-anchor="middle" font-size="11.5" font-weight="600" fill="#94a3b8">0 pcs · 0 Z</text>');
+          } else {
+            var innerRoomH = Math.max(80, drawD - dPx * 2 - 20);
+            var totalRowCount = summaryLines.length + 2; // + divider/totals
+            var lineH = Math.min(22, Math.max(14, Math.floor(innerRoomH / Math.max(totalRowCount, 4))));
+            var fontScale = lineH < 18 ? 0.82 : 1;
+            var totalBlockH = summaryLines.length * lineH + lineH * 1.9;
+            var startY = centerY - totalBlockH / 2 + lineH * 0.6;
+
+            summaryLines.forEach(function (ln, idx) {
+              var fs = Math.round(ln.size * fontScale);
+              parts.push('<text x="' + centerX + '" y="' + (startY + idx * lineH) + '" text-anchor="middle" font-size="' + fs + '" font-weight="' + ln.weight + '" fill="' + ln.color + '" font-family="ui-monospace, Menlo, Consolas, monospace">' + escapeHtml(ln.text) + '</text>');
+            });
+
+            var footerY = startY + summaryLines.length * lineH + 4;
+            parts.push('<line x1="' + (centerX - 68) + '" y1="' + (footerY - lineH * 0.55) + '" x2="' + (centerX + 68) + '" y2="' + (footerY - lineH * 0.55) + '" stroke="#cbd5e1" stroke-width="1"/>');
+            parts.push('<text x="' + centerX + '" y="' + (footerY + 4) + '" text-anchor="middle" font-size="' + Math.round(13 * fontScale) + '" font-weight="700" fill="#1d4ed8" font-family="ui-monospace, Menlo, Consolas, monospace">Total: ' + formatCm(calc.combinedTotalLength) + ' cm (' + formatMeters(calc.combinedTotalLength) + ')</text>');
+            parts.push('<text x="' + centerX + '" y="' + (footerY + lineH + 2) + '" text-anchor="middle" font-size="' + Math.round(11 * fontScale) + '" font-weight="600" fill="#64748b">' + calc.totalStraightPieces + ' pcs · ' + calc.zQuantity + ' Z</text>');
+          }
+
+          svg.innerHTML = parts.join('');
+
+          // Render Direct Wall/Section Size Input Boxes Around Floor Plan (DOM-persistent to protect cursor & IME!)
+          var overlayEl = document.getElementById('diagram-inputs-overlay');
+          if (overlayEl) {
+            var widgetModels = diagramInputWidgets.map(function (w) {
+              var midCm = (w.spanStart + w.spanEnd) / 2;
+              var cx = 0, cy = 0;
+              if (w.wallKey === 'top') { cx = sx(midCm); cy = oy - 54; }
+              else if (w.wallKey === 'bottom') { cx = sx(midCm); cy = oy + drawD + 54; }
+              else if (w.wallKey === 'left') { cx = ox - 74; cy = sy(midCm); }
+              else if (w.wallKey === 'right') { cx = ox + drawW + 74; cy = sy(midCm); }
+
+              var shortTitle = w.section.name || (w.wallKey.toUpperCase());
+              var val = (w.section.enteredSize !== undefined && w.section.enteredSize !== null) ? String(w.section.enteredSize) : '';
+              var calcText = 'cm';
+              if (w.compSec && w.compSec.lengthCm > 0) {
+                var grp = (w.section.pieces || []).filter(function (p) { return p.qty > 0 && p.size > 0; })
+                  .map(function (p) { return formatCm(p.size) + '×' + p.qty; }).join('+');
+                calcText = grp || (formatCm(w.compSec.lengthCm) + ' cm');
+              }
+              return {
+                key: w.wallKey + ':' + w.section.id,
+                wallKey: w.wallKey,
+                sectionId: w.section.id,
+                leftPct: ((cx / svgW) * 100).toFixed(2) + '%',
+                topPct: ((cy / svgH) * 100).toFixed(2) + '%',
+                title: shortTitle,
+                val: val,
+                calcText: calcText
+              };
+            });
+
+            var existingKeys = Array.prototype.map.call(overlayEl.children, function (el) {
+              return el.getAttribute('data-widget-key');
+            });
+            var sameStructure = existingKeys.length === widgetModels.length && widgetModels.every(function (m, i) {
+              return existingKeys[i] === m.key;
+            });
+
+            if (!sameStructure) {
+              overlayEl.innerHTML = '';
+              widgetModels.forEach(function (m) {
+                var box = document.createElement('div');
+                box.className = 'diagram-input-box';
+                box.setAttribute('data-widget-key', m.key);
+                box.style.left = m.leftPct;
+                box.style.top = m.topPct;
+
+                var titleEl = document.createElement('span');
+                titleEl.className = 'diagram-input-title';
+                titleEl.title = m.title;
+                titleEl.textContent = m.title;
+
+                var rowEl = document.createElement('div');
+                rowEl.className = 'diagram-input-row';
+
+                var inp = document.createElement('input');
+                inp.type = 'text';
+                inp.setAttribute('inputmode', 'decimal');
+                inp.setAttribute('dir', 'ltr');
+                inp.setAttribute('autocomplete', 'off');
+                inp.setAttribute('spellcheck', 'false');
+                inp.className = 'diagram-size-input';
+                inp.setAttribute('data-diagram-wall', m.wallKey);
+                inp.setAttribute('data-diagram-section', m.sectionId);
+                inp.placeholder = 'cm';
+                inp.setAttribute('aria-label', m.title + ' size in cm');
+                inp.value = m.val;
+
+                var unitEl = document.createElement('span');
+                unitEl.className = 'diagram-unit';
+                unitEl.textContent = 'cm';
+
+                rowEl.appendChild(inp);
+                rowEl.appendChild(unitEl);
+
+                var calcEl = document.createElement('span');
+                calcEl.className = 'diagram-input-calc';
+                calcEl.textContent = m.calcText;
+
+                box.appendChild(titleEl);
+                box.appendChild(rowEl);
+                box.appendChild(calcEl);
+                overlayEl.appendChild(box);
+              });
+            } else {
+              widgetModels.forEach(function (m, idx) {
+                var box = overlayEl.children[idx];
+                box.style.left = m.leftPct;
+                box.style.top = m.topPct;
+                var titleEl = box.querySelector('.diagram-input-title');
+                if (titleEl && titleEl.textContent !== m.title) {
+                  titleEl.title = m.title;
+                  titleEl.textContent = m.title;
+                }
+                var calcEl = box.querySelector('.diagram-input-calc');
+                if (calcEl && calcEl.textContent !== m.calcText) {
+                  calcEl.textContent = m.calcText;
+                }
+                var inp = box.querySelector('.diagram-size-input');
+                if (inp && document.activeElement !== inp && inp.value !== m.val) {
+                  inp.value = m.val;
+                }
+              });
+            }
+          }
+
+          // Render Fit Warnings
+          var warnBox = document.getElementById('fit-warnings-container');
+          if (calc.warnings.length > 0) {
+            warnBox.innerHTML = '<div class="fit-warning">' +
+              '<span><strong>Notice:</strong> ' + calc.warnings.map(escapeHtml).join(' ') + '</span>' +
+              '</div>';
+          } else {
+            warnBox.innerHTML = '';
+          }
+        }
+
+        /* =========================================================
+           6. RENDERING: Z CORNERS & CUSTOM WALL CONTROLS
+           ========================================================= */
+        function renderZCornersPanel() {
+          var corners = [
+            { key: 'topLeft', label: 'TL Z' },
+            { key: 'topRight', label: 'TR Z' },
+            { key: 'bottomLeft', label: 'BL Z' },
+            { key: 'bottomRight', label: 'BR Z' }
+          ];
+          var grid = document.getElementById('z-toggles-grid');
+          if (!grid) return;
+          grid.innerHTML = corners.map(function (c) {
+            var active = !!state.project.corners[c.key];
+            return '<button type="button" class="z-toggle-btn' + (active ? ' active' : '') + '" data-corner-key="' + c.key + '">' +
+              '<span>' + c.label + '</span>' +
+              '</button>';
+          }).join('');
+        }
+
+        function renderCustomControlsBar() {
+          var bar = document.getElementById('custom-controls-bar');
+          if (!bar) return;
+          if (state.project.templateId !== 'custom') {
+            bar.style.display = 'none';
+            bar.innerHTML = '';
+            return;
+          }
+          bar.style.display = 'flex';
+
+          // Preserve focus if typing inside custom-sec-offset
+          var activeEl = document.activeElement;
+          var activeSecId = activeEl && activeEl.classList && activeEl.classList.contains('custom-sec-offset')
+            ? activeEl.getAttribute('data-custom-sec')
+            : null;
+          if (activeSecId) return;
+
+          var wallKeys = [
+            { key: 'top', label: 'Top' },
+            { key: 'left', label: 'Left' },
+            { key: 'right', label: 'Right' },
+            { key: 'bottom', label: 'Bottom' }
+          ];
+
+          var wallsHtml = '<div class="custom-walls-row"><span class="field-label" style="margin-right:4px;">Walls:</span>';
+          wallKeys.forEach(function (w) {
+            var enabled = !!(state.project.walls[w.key] && state.project.walls[w.key].enabled);
+            wallsHtml += '<button type="button" class="custom-wall-btn' + (enabled ? ' active' : '') + '" data-custom-wall="' + w.key + '">' + w.label + '</button>';
+          });
+          wallsHtml += '<button type="button" class="btn btn-secondary btn-sm" id="custom-add-split-btn" style="min-height:34px;padding:4px 10px;font-size:0.75rem;margin-left:auto;">+ Split Section</button></div>';
+
+          var chipsHtml = '<div class="custom-sections-list">';
+          wallKeys.forEach(function (w) {
+            var wall = state.project.walls[w.key];
+            if (!wall || !wall.enabled) return;
+            (wall.sections || []).forEach(function (sec, idx) {
+              var secLabel = w.label + (wall.sections.length > 1 ? ' #' + (idx + 1) : '');
+              chipsHtml += '<div class="custom-sec-chip">' +
+                '<strong>' + secLabel + '</strong>' +
+                '<select class="custom-sec-select" data-custom-anchor="' + w.key + '" data-custom-sec="' + sec.id + '">' +
+                '<option value="start"' + (sec.anchor === 'start' ? ' selected' : '') + '>Start</option>' +
+                '<option value="end"' + (sec.anchor === 'end' ? ' selected' : '') + '>End</option>' +
+                '<option value="custom"' + (sec.anchor === 'custom' ? ' selected' : '') + '>Gap</option>' +
+                '</select>';
+              if (sec.anchor === 'custom') {
+                chipsHtml += '<input type="text" inputmode="decimal" dir="ltr" class="custom-sec-offset num-input" data-custom-offset="' + w.key + '" data-custom-sec="' + sec.id + '" value="' + escapeAttr(sec.startPos != null ? sec.startPos : 0) + '" placeholder="cm" aria-label="' + secLabel + ' gap start cm" />';
+              }
+              if (wall.sections.length > 1) {
+                chipsHtml += '<button type="button" class="btn btn-ghost btn-sm" style="min-height:24px;padding:0 6px;color:var(--danger);" data-custom-remove="' + w.key + '" data-custom-sec="' + sec.id + '" aria-label="Remove section">&times;</button>';
+              }
+              chipsHtml += '</div>';
+            });
+          });
+          chipsHtml += '</div>';
+
+          bar.innerHTML = wallsHtml + chipsHtml;
+        }
+
+        function renderAll() {
+          persistCurrentProject();
+          var calc = computeCalculations(state.project);
+
+          // Sync top inputs ONLY when not actively focused
+          var nameInput = document.getElementById('project-name-input');
+          if (nameInput && document.activeElement !== nameInput) {
+            nameInput.value = state.project.name || '';
+          }
+          var zInput = document.getElementById('z-size-input');
+          if (zInput && document.activeElement !== zInput) {
+            zInput.value = String(state.project.zSize);
+          }
+
+          document.getElementById('saved-count-label').textContent = String(state.savedProjects.length);
+
+          // Print header sync
+          var tpl = TEMPLATES[state.project.templateId] || TEMPLATES.custom;
+          document.getElementById('print-project-title').textContent = state.project.name || 'Majlis Layout Report';
+          document.getElementById('print-project-meta').textContent = tpl.name + ' · Room: ' + state.project.roomWidth + ' × ' + state.project.roomDepth + ' cm · Z Corner: ' + calc.zSize + ' cm';
+          document.getElementById('print-date').textContent = 'Generated: ' + new Date().toLocaleDateString();
+
+          renderTemplatesGrid();
+          renderZCornersPanel();
+          renderCustomControlsBar();
+          renderFloorPlan(calc);
+        }
+
+        /* =========================================================
+           7. PURE-JS OFFLINE VECTOR PDF GENERATOR (PDF 1.4)
+           ========================================================= */
+        function pdfStr(text) {
+          return '(' + String(text)
+            .replace(/[^\x20-\x7E]/g, '-')
+            .replace(/\\/g, '\\\\')
+            .replace(/\(/g, '\\(')
+            .replace(/\)/g, '\\)') + ')';
+        }
+
+        function hexToRgb01(hex) {
+          var clean = hex.replace('#', '');
+          var r = parseInt(clean.slice(0, 2), 16) / 255;
+          var g = parseInt(clean.slice(2, 4), 16) / 255;
+          var b = parseInt(clean.slice(4, 6), 16) / 255;
+          return r.toFixed(3) + ' ' + g.toFixed(3) + ' ' + b.toFixed(3);
+        }
+
+        function downloadPdfReport() {
+          var p = state.project;
+          var calc = computeCalculations(p);
+          var tpl = TEMPLATES[p.templateId] || TEMPLATES.custom;
+
+          // A4 portrait: 595.28 x 841.89 pt
+          var pageW = 595.28;
+          var pageH = 841.89;
+          var cmds = [];
+
+          // Header banner
+          cmds.push('0.114 0.306 0.847 rg 36 772 523 42 re f');
+          cmds.push('BT /F2 15 Tf 1 1 1 rg 48 796 Td ' + pdfStr(p.name || 'Majlis Layout Report') + ' Tj ET');
+          cmds.push('BT /F1 9 Tf 0.86 0.92 1 rg 48 781 Td ' + pdfStr(tpl.name + '  |  Room: ' + p.roomWidth + ' x ' + p.roomDepth + ' cm  |  Z Size: ' + calc.zSize + ' cm') + ' Tj ET');
+
+          // Floor Plan Box (y: 470 to 755)
+          var boxX = 36, boxY = 468, boxW = 523, boxH = 290;
+          cmds.push('0.973 0.980 0.988 rg ' + boxX + ' ' + boxY + ' ' + boxW + ' ' + boxH + ' re f');
+          cmds.push('0.796 0.835 0.882 RG 0.8 w ' + boxX + ' ' + boxY + ' ' + boxW + ' ' + boxH + ' re S');
+
+          // Compute scaling inside PDF diagram box
+          var W = Math.max(150, p.roomWidth);
+          var D = Math.max(150, p.roomDepth);
+          var maxR = W, maxB = D;
+          ['top', 'bottom'].forEach(function (wk) {
+            calc.wallGeometries[wk].sections.forEach(function (s) { if (s.endCm > maxR) maxR = s.endCm; });
+          });
+          ['left', 'right'].forEach(function (wk) {
+            calc.wallGeometries[wk].sections.forEach(function (s) { if (s.endCm > maxB) maxB = s.endCm; });
+          });
+
+          var padX = 75, padY = 48;
+          var sc = Math.min((boxW - padX * 2) / maxR, (boxH - padY * 2) / maxB);
+          var ox = boxX + (boxW - maxR * sc) / 2;
+          var topY = boxY + boxH - (boxH - maxB * sc) / 2; // PDF y grows upward!
+          var sofaDepth = Math.min(90, Math.max(55, Math.round(Math.min(W, D) * 0.16)));
+          var dPt = sofaDepth * sc;
+          var zPt = calc.zSize * sc;
+
+          function px(cm) { return ox + cm * sc; }
+          function py(cm) { return topY - cm * sc; }
+
+          // Draw wall lines only on active walls/sections
+          ['top', 'left', 'right', 'bottom'].forEach(function (wk) {
+            var geo = calc.wallGeometries[wk];
+            var spans = [];
+            if (geo.cornerFlags.start) spans.push([0, calc.zSize]);
+            if (geo.cornerFlags.end) spans.push([geo.wallSpan - calc.zSize, geo.wallSpan]);
+            geo.sortedSections.forEach(function (s) { if (s.lengthCm > 0) spans.push([s.startCm, s.endCm]); });
+            cmds.push('0.059 0.090 0.165 RG 2 w');
+            spans.forEach(function (sp) {
+              if (wk === 'top') cmds.push(px(sp[0]).toFixed(2) + ' ' + py(0).toFixed(2) + ' m ' + px(sp[1]).toFixed(2) + ' ' + py(0).toFixed(2) + ' l S');
+              if (wk === 'bottom') cmds.push(px(sp[0]).toFixed(2) + ' ' + py(D).toFixed(2) + ' m ' + px(sp[1]).toFixed(2) + ' ' + py(D).toFixed(2) + ' l S');
+              if (wk === 'left') cmds.push(px(0).toFixed(2) + ' ' + py(sp[0]).toFixed(2) + ' m ' + px(0).toFixed(2) + ' ' + py(sp[1]).toFixed(2) + ' l S');
+              if (wk === 'right') cmds.push(px(W).toFixed(2) + ' ' + py(sp[0]).toFixed(2) + ' m ' + px(W).toFixed(2) + ' ' + py(sp[1]).toFixed(2) + ' l S');
+            });
+          });
+
+          // Draw straight pieces in PDF
+          ['top', 'left', 'right', 'bottom'].forEach(function (wk) {
+            var geo = calc.wallGeometries[wk];
+            if (!geo.enabled) return;
+            geo.sections.forEach(function (sec) {
+              var cur = sec.startCm;
+              sec.pieces.forEach(function (piece) {
+                var c = getPieceColor(piece.size);
+                var lenPt = piece.size * sc;
+                var rx = 0, ry = 0, rw = 0, rh = 0;
+                if (wk === 'top') { rx = px(cur); ry = py(0) - dPt; rw = lenPt - 1; rh = dPt; }
+                if (wk === 'bottom') { rx = px(cur); ry = py(D); rw = lenPt - 1; rh = dPt; }
+                if (wk === 'left') { rx = px(0); ry = py(cur) - lenPt + 1; rw = dPt; rh = lenPt - 1; }
+                if (wk === 'right') { rx = px(W) - dPt; ry = py(cur) - lenPt + 1; rw = dPt; rh = lenPt - 1; }
+                cmds.push(hexToRgb01(c.fill) + ' rg ' + hexToRgb01(c.stroke) + ' RG 0.8 w ' +
+                  rx.toFixed(2) + ' ' + ry.toFixed(2) + ' ' + Math.max(2, rw).toFixed(2) + ' ' + Math.max(2, rh).toFixed(2) + ' re B');
+                cmds.push('BT /F2 7 Tf 1 1 1 rg ' + (rx + rw / 2 - 7).toFixed(2) + ' ' + (ry + rh / 2 - 2.5).toFixed(2) + ' Td ' + pdfStr(piece.size) + ' Tj ET');
+                cur += piece.size;
+              });
+            });
+          });
+
+          // Draw Z corners in PDF
+          var zFill = hexToRgb01(SIZE_COLORS.z.fill);
+          var zStroke = hexToRgb01(SIZE_COLORS.z.stroke);
+          var zArmPt = Math.max(dPt + 2, zPt * 0.96);
+          ['topLeft', 'topRight', 'bottomLeft', 'bottomRight'].forEach(function (ck) {
+            if (!p.corners[ck] || calc.zSize <= 0) return;
+            var pts = [];
+            if (ck === 'topLeft') {
+              pts = [[px(0), py(0)], [px(0) + zArmPt, py(0)], [px(0) + zArmPt, py(0) - dPt], [px(0) + dPt, py(0) - dPt], [px(0) + dPt, py(0) - zArmPt], [px(0), py(0) - zArmPt]];
+            } else if (ck === 'topRight') {
+              pts = [[px(W), py(0)], [px(W) - zArmPt, py(0)], [px(W) - zArmPt, py(0) - dPt], [px(W) - dPt, py(0) - dPt], [px(W) - dPt, py(0) - zArmPt], [px(W), py(0) - zArmPt]];
+            } else if (ck === 'bottomLeft') {
+              pts = [[px(0), py(D)], [px(0) + zArmPt, py(D)], [px(0) + zArmPt, py(D) + dPt], [px(0) + dPt, py(D) + dPt], [px(0) + dPt, py(D) + zArmPt], [px(0), py(D) + zArmPt]];
+            } else if (ck === 'bottomRight') {
+              pts = [[px(W), py(D)], [px(W) - zArmPt, py(D)], [px(W) - zArmPt, py(D) + dPt], [px(W) - dPt, py(D) + dPt], [px(W) - dPt, py(D) + zArmPt], [px(W), py(D) + zArmPt]];
+            }
+            var path = pts.map(function (pt, idx) { return pt[0].toFixed(2) + ' ' + pt[1].toFixed(2) + (idx === 0 ? ' m ' : ' l '); }).join('') + 'h B';
+            cmds.push(zFill + ' rg ' + zStroke + ' RG 1 w ' + path);
+            var tx = (ck.indexOf('Left') !== -1) ? px(0) + dPt * 0.32 : px(W) - dPt * 0.72;
+            var ty = (ck.indexOf('top') !== -1) ? py(0) - dPt * 0.55 : py(D) + dPt * 0.42;
+            cmds.push('BT /F2 7 Tf 0.57 0.25 0.05 rg ' + tx.toFixed(2) + ' ' + ty.toFixed(2) + ' Td (Z) Tj ET');
+          });
+
+          // Wall annotations & center summary inside PDF diagram
+          var topEntered = (p.walls.top.enabled && p.walls.top.sections[0] && p.walls.top.sections[0].enteredSize) ? p.walls.top.sections[0].enteredSize + ' cm' : '';
+          var botEntered = (p.walls.bottom.enabled && p.walls.bottom.sections[0] && p.walls.bottom.sections[0].enteredSize) ? p.walls.bottom.sections[0].enteredSize + ' cm' : '';
+          var leftEntered = (p.walls.left.enabled && p.walls.left.sections[0] && p.walls.left.sections[0].enteredSize) ? p.walls.left.sections[0].enteredSize + ' cm' : '';
+          var rightEntered = (p.walls.right.enabled && p.walls.right.sections[0] && p.walls.right.sections[0].enteredSize) ? p.walls.right.sections[0].enteredSize + ' cm' : '';
+
+          if (p.walls.top.enabled) cmds.push('BT /F2 8 Tf 0.06 0.09 0.16 rg ' + (px(W / 2) - 26).toFixed(2) + ' ' + (py(0) + 12).toFixed(2) + ' Td ' + pdfStr('TOP ' + (topEntered || (W + ' cm'))) + ' Tj ET');
+          if (p.walls.bottom.enabled) cmds.push('BT /F2 8 Tf 0.06 0.09 0.16 rg ' + (px(W / 2) - 32).toFixed(2) + ' ' + (py(D) - 18).toFixed(2) + ' Td ' + pdfStr('BOTTOM ' + (botEntered || (W + ' cm'))) + ' Tj ET');
+          if (p.walls.left.enabled) cmds.push('BT /F2 8 Tf 0.06 0.09 0.16 rg ' + (px(0) - 62).toFixed(2) + ' ' + (py(D / 2)).toFixed(2) + ' Td ' + pdfStr('LEFT ' + (leftEntered || D)) + ' Tj ET');
+          if (p.walls.right.enabled) cmds.push('BT /F2 8 Tf 0.06 0.09 0.16 rg ' + (px(W) + 8).toFixed(2) + ' ' + (py(D / 2)).toFixed(2) + ' Td ' + pdfStr('RIGHT ' + (rightEntered || D)) + ' Tj ET');
+
+          var pdfSumLines = calc.sizeGroups.map(function (sg) { return formatCm(sg.size) + ' = ' + sg.qty; });
+          if (calc.zQuantity > 0) pdfSumLines.push('Z = ' + calc.zQuantity + ' (' + formatCm(calc.zSize) + ' cm)');
+          if (pdfSumLines.length > 0) {
+            var sumCenterX = px(W / 2);
+            var sumTopY = py(D / 2) + (pdfSumLines.length * 10) / 2;
+            pdfSumLines.forEach(function (slTxt, idx) {
+              cmds.push('BT /F2 9 Tf 0.06 0.09 0.16 rg ' + (sumCenterX - 24).toFixed(2) + ' ' + (sumTopY - idx * 12).toFixed(2) + ' Td ' + pdfStr(slTxt) + ' Tj ET');
+            });
+            cmds.push('BT /F2 8.5 Tf 0.114 0.306 0.847 rg ' + (sumCenterX - 48).toFixed(2) + ' ' + (sumTopY - pdfSumLines.length * 12 - 4).toFixed(2) + ' Td ' + pdfStr('Total: ' + formatCm(calc.combinedTotalLength) + ' cm (' + formatMeters(calc.combinedTotalLength) + ')') + ' Tj ET');
+          }
+
+          // Summary Calculation Section (y = 445 down to 60)
+          var cy = 444;
+          function textLine(x, y, font, size, color, txt) {
+            cmds.push('BT ' + font + ' ' + size + ' Tf ' + color + ' rg ' + x + ' ' + y + ' Td ' + pdfStr(txt) + ' Tj ET');
+          }
+
+          textLine(36, cy, '/F2', 11, '0.059 0.090 0.165', 'CALCULATION SUMMARY');
+          cy -= 18;
+          textLine(36, cy, '/F1', 9.5, '0.2 0.25 0.33', 'Total Straight Pieces: ' + calc.totalStraightPieces + '    |    Total Z Corners: ' + calc.zQuantity + ' (' + calc.zSize + ' cm each)    |    Open/Gap Sections: ' + calc.openSectionsCount);
+          cy -= 15;
+          textLine(36, cy, '/F2', 9.5, '0.114 0.306 0.847', 'Straight Total Length: ' + calc.straightTotalLength + ' cm (' + formatMeters(calc.straightTotalLength) + ')   |   Z Total Length: ' + calc.zTotalLength + ' cm (' + formatMeters(calc.zTotalLength) + ')   |   Combined: ' + calc.combinedTotalLength + ' cm (' + formatMeters(calc.combinedTotalLength) + ')');
+
+          cy -= 24;
+          textLine(36, cy, '/F2', 10.5, '0.059 0.090 0.165', 'PIECE BREAKDOWN BY SIZE');
+          cy -= 15;
+          var sizeLines = calc.sizeGroups.map(function (sg) {
+            return formatCm(sg.size) + ' cm: ' + sg.qty + ' pcs (' + formatCm(sg.qty * sg.size) + ' cm)';
+          });
+          if (sizeLines.length === 0) {
+            sizeLines.push('No straight pieces placed: 0 pcs');
+          }
+          sizeLines.forEach(function (line, i) {
+            var colX = (i % 2 === 0) ? 36 : 300;
+            textLine(colX, cy, '/F1', 9, '0.2 0.25 0.33', line);
+            if (i % 2 === 1 || i === sizeLines.length - 1) cy -= 14;
+          });
+
+          cy -= 12;
+          textLine(36, cy, '/F2', 10.5, '0.059 0.090 0.165', 'WALL-BY-WALL BREAKDOWN');
+          cy -= 16;
+          ['top', 'left', 'right', 'bottom'].forEach(function (wk) {
+            var wall = p.walls[wk];
+            var geo = calc.wallGeometries[wk];
+            var desc = '';
+            if (!wall.enabled || wall.sections.length === 0) {
+              desc = 'Open / Empty Wall (0 pieces, 0 cm)';
+            } else {
+              desc = wall.sections.map(function (s) {
+                var ps = (s.pieces || []).filter(function (x) { return x.qty > 0; }).map(function (x) { return x.size + 'cm x ' + x.qty; }).join(', ');
+                return (wall.sections.length > 1 ? s.name + ': ' : '') + (ps || 'Empty');
+              }).join(' | ') + '  ->  ' + geo.totalPiecesCount + ' pcs, ' + geo.totalStraightLength + ' cm (' + formatMeters(geo.totalStraightLength) + ')';
+            }
+            textLine(36, cy, '/F2', 9, '0.059 0.090 0.165', wk.toUpperCase() + ':');
+            textLine(92, cy, '/F1', 9, '0.2 0.25 0.33', desc.slice(0, 88));
+            cy -= 15;
+          });
+
+          var streamData = cmds.join('\n');
+          var objects = [
+            '1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n',
+            '2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n',
+            '3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + pageW + ' ' + pageH + '] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >>\nendobj\n',
+            '4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n',
+            '5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>\nendobj\n',
+            '6 0 obj\n<< /Length ' + streamData.length + ' >>\nstream\n' + streamData + '\nendstream\nendobj\n'
+          ];
+
+          var header = '%PDF-1.4\n';
+          var offsets = [0];
+          var body = '';
+          var pos = header.length;
+          objects.forEach(function (obj) {
+            offsets.push(pos);
+            body += obj;
+            pos += obj.length;
+          });
+
+          var xrefPos = pos;
+          var xref = 'xref\n0 ' + (objects.length + 1) + '\n0000000000 65535 f \n';
+          for (var i = 1; i < offsets.length; i++) {
+            xref += String(offsets[i]).padStart(10, '0') + ' 00000 n \n';
+          }
+          var trailer = 'trailer\n<< /Size ' + (objects.length + 1) + ' /Root 1 0 R >>\nstartxref\n' + xrefPos + '\n%%EOF';
+
+          var pdfContent = header + body + xref + trailer;
+          var blob = new Blob([pdfContent], { type: 'application/pdf' });
+          triggerDownload(blob, safeFileName(p.name) + '-layout-report.pdf');
+          showToast('PDF layout report downloaded.');
+        }
+
+        function downloadTextReport() {
+          var p = state.project;
+          var calc = computeCalculations(p);
+          var tpl = TEMPLATES[p.templateId] || TEMPLATES.custom;
+          var lines = [];
+
+          lines.push('============================================================');
+          lines.push('MAJLIS / MUSANAD PIECE & LAYOUT CALCULATION REPORT');
+          lines.push('============================================================');
+          lines.push('Project Name : ' + (p.name || 'Untitled Majlis'));
+          lines.push('Layout Type  : ' + tpl.name);
+          lines.push('Room Size    : ' + p.roomWidth + ' cm (' + formatMeters(p.roomWidth) + ') x ' + p.roomDepth + ' cm (' + formatMeters(p.roomDepth) + ')');
+          lines.push('Z Corner Size: ' + calc.zSize + ' cm (' + formatMeters(calc.zSize) + ')');
+          lines.push('Generated    : ' + new Date().toLocaleString());
+          lines.push('');
+          lines.push('------------------------------------------------------------');
+          lines.push('WALL-BY-WALL PIECE BREAKDOWN');
+          lines.push('------------------------------------------------------------');
+
+          ['top', 'left', 'right', 'bottom'].forEach(function (wk) {
+            var wall = p.walls[wk];
+            var geo = calc.wallGeometries[wk];
+            lines.push(wk.toUpperCase() + ' WALL (' + geo.wallSpan + ' cm):');
+            if (!wall.enabled || wall.sections.length === 0) {
+              lines.push('  [OPEN / EMPTY WALL - 0 pieces]');
+            } else {
+              wall.sections.forEach(function (sec, idx) {
+                var comp = geo.sections[idx];
+                lines.push('  Section: ' + sec.name + ' (Pos ' + Math.round(comp.startCm) + ' cm -> ' + Math.round(comp.endCm) + ' cm)');
+                (sec.pieces || []).forEach(function (piece) {
+                  if (piece.qty > 0 && piece.size > 0) {
+                    lines.push('    - ' + piece.size + ' cm x ' + piece.qty + ' = ' + (piece.size * piece.qty) + ' cm');
+                  }
+                });
+              });
+              if (geo.gaps.length > 0) {
+                geo.gaps.forEach(function (g) {
+                  lines.push('  [INTENTIONAL EMPTY GAP: ' + Math.round(g.lengthCm) + ' cm (' + Math.round(g.startCm) + ' -> ' + Math.round(g.endCm) + ' cm)]');
+                });
+              }
+              lines.push('  Wall Straight Total: ' + geo.totalPiecesCount + ' pcs | ' + geo.totalStraightLength + ' cm (' + formatMeters(geo.totalStraightLength) + ')');
+            }
+            lines.push('');
+          });
+
+          lines.push('------------------------------------------------------------');
+          lines.push('PIECE COUNTS BY SIZE');
+          lines.push('------------------------------------------------------------');
+          if (calc.sizeGroups.length > 0) {
+            calc.sizeGroups.forEach(function (sg) {
+              lines.push(formatCm(sg.size) + ' cm pieces : ' + sg.qty + ' (' + formatCm(sg.qty * sg.size) + ' cm)');
+            });
+          } else {
+            lines.push('No straight pieces placed : 0');
+          }
+          lines.push('');
+          lines.push('------------------------------------------------------------');
+          lines.push('TOTALS & FORMULAS');
+          lines.push('------------------------------------------------------------');
+          lines.push('Total Straight Pieces   : ' + calc.totalStraightPieces);
+          lines.push('Straight Total Length   : ' + calc.straightTotalLength + ' cm (' + formatMeters(calc.straightTotalLength) + ')');
+          lines.push('Z Corner Pieces         : ' + calc.zQuantity + ' (' + calc.zSize + ' cm each)');
+          lines.push('Z Total Length          : ' + calc.zTotalLength + ' cm (' + formatMeters(calc.zTotalLength) + ')');
+          lines.push('Combined Total Length   : ' + calc.combinedTotalLength + ' cm (' + formatMeters(calc.combinedTotalLength) + ')');
+          lines.push('Empty / Open Sections   : ' + calc.openSectionsCount);
+          lines.push('============================================================');
+
+          var blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' });
+          triggerDownload(blob, safeFileName(p.name) + '-calculation-report.txt');
+          showToast('Calculation report downloaded.');
+        }
+
+        function drawRoundRectCanvas(ctx, x, y, w, h, r, fill, stroke, lineWidth) {
+          var rad = Math.min(r || 0, w / 2, h / 2);
+          ctx.beginPath();
+          ctx.moveTo(x + rad, y);
+          ctx.lineTo(x + w - rad, y);
+          ctx.quadraticCurveTo(x + w, y, x + w, y + rad);
+          ctx.lineTo(x + w, y + h - rad);
+          ctx.quadraticCurveTo(x + w, y + h, x + w - rad, y + h);
+          ctx.lineTo(x + rad, y + h);
+          ctx.quadraticCurveTo(x, y + h, x, y + h - rad);
+          ctx.lineTo(x, y + rad);
+          ctx.quadraticCurveTo(x, y, x + rad, y);
+          ctx.closePath();
+          if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+          if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lineWidth || 1; ctx.stroke(); }
+        }
+
+        function downloadCompleteImage() {
+          var p = state.project;
+          var calc = computeCalculations(p);
+          var tpl = TEMPLATES[p.templateId] || TEMPLATES.custom;
+
+          var canvas = document.createElement('canvas');
+          if (!canvas || typeof canvas.getContext !== 'function') {
+            downloadPdfReport();
+            return;
+          }
+          var ctx = canvas.getContext('2d');
+          if (!ctx) {
+            downloadPdfReport();
+            return;
+          }
+
+          var cW = 1600;
+          var breakdownRows = Math.max(4, calc.sizeGroups.length + 3);
+          var footerH = 110 + breakdownRows * 34;
+          var diagBoxX = 40, diagBoxY = 126, diagBoxW = 1520, diagBoxH = 880;
+          var legendY = diagBoxY + diagBoxH + 22;
+          var summaryY = legendY + 46;
+          var cH = summaryY + footerH + 36;
+
+          canvas.width = cW;
+          canvas.height = cH;
+
+          // Page background
+          ctx.fillStyle = '#f8fafc';
+          ctx.fillRect(0, 0, cW, cH);
+
+          // Top Header Banner
+          ctx.fillStyle = '#1d4ed8';
+          ctx.fillRect(0, 0, cW, 104);
+          ctx.fillStyle = '#ffffff';
+          ctx.font = '700 30px system-ui, -apple-system, sans-serif';
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(p.name || 'Majlis Layout & Calculation', 44, 38);
+
+          ctx.fillStyle = '#dbeafe';
+          ctx.font = '600 17px system-ui, -apple-system, sans-serif';
+          ctx.fillText(tpl.name + '   ·   Z Size: ' + formatCm(calc.zSize) + ' cm   ·   Active Z: ' + calc.zQuantity + '   ·   ' + new Date().toLocaleDateString(), 44, 74);
+
+          // Header Total Pill
+          var totalBadgeTxt = 'Total: ' + formatCm(calc.combinedTotalLength) + ' cm (' + formatMeters(calc.combinedTotalLength) + ')';
+          ctx.font = '700 20px ui-monospace, Menlo, Consolas, monospace';
+          var badgeW = Math.max(260, ctx.measureText(totalBadgeTxt).width + 44);
+          drawRoundRectCanvas(ctx, cW - badgeW - 44, 24, badgeW, 56, 10, '#1e3a8a', '#60a5fa', 1.5);
+          ctx.fillStyle = '#ffffff';
+          ctx.textAlign = 'center';
+          ctx.fillText(totalBadgeTxt, cW - badgeW / 2 - 44, 52);
+
+          // Floor Plan Card
+          drawRoundRectCanvas(ctx, diagBoxX, diagBoxY, diagBoxW, diagBoxH, 16, '#ffffff', '#cbd5e1', 1.5);
+
+          var W = Math.max(150, Number(p.roomWidth) || 500);
+          var D = Math.max(150, Number(p.roomDepth) || 500);
+          var zSize = calc.zSize;
+          var sofaDepth = Math.min(90, Math.max(55, Math.round(Math.min(W, D) * 0.16)));
+
+          var maxR = W, maxB = D;
+          ['top', 'bottom'].forEach(function (wk) {
+            calc.wallGeometries[wk].sections.forEach(function (s) { if (s.endCm > maxR) maxR = s.endCm; });
+          });
+          ['left', 'right'].forEach(function (wk) {
+            calc.wallGeometries[wk].sections.forEach(function (s) { if (s.endCm > maxB) maxB = s.endCm; });
+          });
+
+          var padX = 250, padY = 150;
+          var sc = Math.min((diagBoxW - padX * 2) / maxR, (diagBoxH - padY * 2) / maxB);
+          var drawW = W * sc;
+          var drawD = D * sc;
+          var ox = diagBoxX + (diagBoxW - maxR * sc) / 2;
+          var oy = diagBoxY + (diagBoxH - maxB * sc) / 2;
+
+          function sx(cm) { return ox + cm * sc; }
+          function sy(cm) { return oy + cm * sc; }
+          function sl(cm) { return cm * sc; }
+
+          // Blueprint grid inside diagram box
+          ctx.save();
+          ctx.beginPath();
+          ctx.rect(diagBoxX + 1, diagBoxY + 1, diagBoxW - 2, diagBoxH - 2);
+          ctx.clip();
+          var gridStep = Math.max(30, sl(50));
+          ctx.strokeStyle = 'rgba(148, 163, 184, 0.20)';
+          ctx.lineWidth = 1;
+          for (var gx = diagBoxX; gx < diagBoxX + diagBoxW; gx += gridStep) {
+            ctx.beginPath(); ctx.moveTo(gx, diagBoxY); ctx.lineTo(gx, diagBoxY + diagBoxH); ctx.stroke();
+          }
+          for (var gy = diagBoxY; gy < diagBoxY + diagBoxH; gy += gridStep) {
+            ctx.beginPath(); ctx.moveTo(diagBoxX, gy); ctx.lineTo(diagBoxX + diagBoxW, gy); ctx.stroke();
+          }
+          ctx.restore();
+
+          var dPx = sl(sofaDepth);
+          var backPx = Math.max(12, dPx * 0.22);
+          var recCornersMap = p.recommendedCorners || (TEMPLATES[p.templateId] && TEMPLATES[p.templateId].recommendedCorners) || {};
+          var callouts = [];
+
+          // Walls, Open indicators, Gaps, Empty guides & Callout collection
+          ['top', 'left', 'right', 'bottom'].forEach(function (wallKey) {
+            var geo = calc.wallGeometries[wallKey];
+            var wallObj = p.walls[wallKey];
+            var hasRecStart = (wallKey === 'top' && recCornersMap.topLeft) || (wallKey === 'bottom' && recCornersMap.bottomLeft) || (wallKey === 'left' && recCornersMap.topLeft) || (wallKey === 'right' && recCornersMap.topRight);
+            var hasRecEnd = (wallKey === 'top' && recCornersMap.topRight) || (wallKey === 'bottom' && recCornersMap.bottomRight) || (wallKey === 'left' && recCornersMap.bottomLeft) || (wallKey === 'right' && recCornersMap.bottomRight);
+
+            if (!geo.enabled && !geo.cornerFlags.start && !geo.cornerFlags.end) {
+              ctx.save();
+              ctx.fillStyle = '#94a3b8';
+              ctx.font = '700 16px system-ui, sans-serif';
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              if (wallKey === 'bottom') ctx.fillText('OPEN', ox + drawW / 2, oy + drawD + 26);
+              else if (wallKey === 'top') ctx.fillText('OPEN', ox + drawW / 2, oy - 24);
+              else if (wallKey === 'left') {
+                ctx.translate(ox - 26, oy + drawD / 2); ctx.rotate(-Math.PI / 2); ctx.fillText('OPEN', 0, 0);
+              } else if (wallKey === 'right') {
+                ctx.translate(ox + drawW + 26, oy + drawD / 2); ctx.rotate(Math.PI / 2); ctx.fillText('OPEN', 0, 0);
+              }
+              ctx.restore();
+              return;
+            }
+
+            var spans = [];
+            var emptyGuides = [];
+            if (geo.cornerFlags.start) spans.push([0, zSize]);
+            if (geo.cornerFlags.end) spans.push([geo.wallSpan - zSize, geo.wallSpan]);
+
+            geo.sortedSections.forEach(function (sec) {
+              var r0 = (typeof sec.raw.guideStartRatio === 'number') ? sec.raw.guideStartRatio : 0;
+              var r1 = (typeof sec.raw.guideEndRatio === 'number') ? sec.raw.guideEndRatio : 1;
+              var gStart = Math.round(geo.wallSpan * r0);
+              var gEnd = Math.round(geo.wallSpan * r1);
+              if ((hasRecStart || geo.cornerFlags.start) && sec.raw.anchor !== 'end' && r0 === 0) gStart = Math.max(gStart, zSize);
+              if ((hasRecEnd || geo.cornerFlags.end) && (sec.raw.anchor === 'end' || r1 === 1)) gEnd = Math.min(gEnd, geo.wallSpan - zSize);
+
+              if (sec.lengthCm > 0) {
+                spans.push([sec.startCm, sec.endCm]);
+                var bStart = sec.startCm, bEnd = sec.endCm;
+                if (geo.cornerFlags.start && sec.startCm <= zSize + 2) bStart = 0;
+                if (geo.cornerFlags.end && sec.endCm >= geo.wallSpan - zSize - 2) bEnd = geo.wallSpan;
+                callouts.push({ wallKey: wallKey, section: sec.raw, compSec: sec, midCm: (bStart + bEnd) / 2 });
+              } else if (wallObj && wallObj.enabled) {
+                if (gEnd > gStart) {
+                  spans.push([gStart, gEnd]);
+                  emptyGuides.push({ startCm: gStart, endCm: gEnd });
+                }
+                callouts.push({ wallKey: wallKey, section: sec.raw, compSec: sec, midCm: (geo.wallSpan * r0 + geo.wallSpan * r1) / 2 });
+              }
+            });
+
+            if (hasRecStart || geo.cornerFlags.start) spans.push([0, zSize]);
+            if (hasRecEnd || geo.cornerFlags.end) spans.push([geo.wallSpan - zSize, geo.wallSpan]);
+
+            // Structural wall lines
+            ctx.strokeStyle = '#0f172a';
+            ctx.lineWidth = 6;
+            ctx.lineCap = 'square';
+            spans.forEach(function (sp) {
+              ctx.beginPath();
+              if (wallKey === 'top') { ctx.moveTo(sx(sp[0]), oy); ctx.lineTo(sx(sp[1]), oy); }
+              else if (wallKey === 'bottom') { ctx.moveTo(sx(sp[0]), oy + drawD); ctx.lineTo(sx(sp[1]), oy + drawD); }
+              else if (wallKey === 'left') { ctx.moveTo(ox, sy(sp[0])); ctx.lineTo(ox, sy(sp[1])); }
+              else if (wallKey === 'right') { ctx.moveTo(ox + drawW, sy(sp[0])); ctx.lineTo(ox + drawW, sy(sp[1])); }
+              ctx.stroke();
+            });
+
+            // Empty guides
+            emptyGuides.forEach(function (eg) {
+              var gLenPx = sl(eg.endCm - eg.startCm);
+              if (gLenPx < 24) return;
+              ctx.save();
+              ctx.setLineDash([8, 6]);
+              var rx = 0, ry = 0, rw = 0, rh = 0;
+              if (wallKey === 'top') { rx = sx(eg.startCm); ry = oy; rw = gLenPx; rh = dPx; }
+              else if (wallKey === 'bottom') { rx = sx(eg.startCm); ry = oy + drawD - dPx; rw = gLenPx; rh = dPx; }
+              else if (wallKey === 'left') { rx = ox; ry = sy(eg.startCm); rw = dPx; rh = gLenPx; }
+              else if (wallKey === 'right') { rx = ox + drawW - dPx; ry = sy(eg.startCm); rw = dPx; rh = gLenPx; }
+              drawRoundRectCanvas(ctx, rx, ry, rw, rh, 4, 'rgba(226,232,240,0.45)', '#94a3b8', 1.5);
+              ctx.setLineDash([]);
+              ctx.fillStyle = '#64748b';
+              ctx.font = '600 15px system-ui, sans-serif';
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.fillText('Empty', rx + rw / 2, ry + rh / 2);
+              ctx.restore();
+            });
+
+            // Intentional gaps
+            geo.gaps.forEach(function (gap) {
+              var gLenPx = sl(gap.lengthCm);
+              if (gLenPx < 14) return;
+              var rx = 0, ry = 0, rw = 0, rh = 0;
+              if (wallKey === 'top') { rx = sx(gap.startCm); ry = oy; rw = gLenPx; rh = dPx; }
+              else if (wallKey === 'bottom') { rx = sx(gap.startCm); ry = oy + drawD - dPx; rw = gLenPx; rh = dPx; }
+              else if (wallKey === 'left') { rx = ox; ry = sy(gap.startCm); rw = dPx; rh = gLenPx; }
+              else if (wallKey === 'right') { rx = ox + drawW - dPx; ry = sy(gap.startCm); rw = dPx; rh = gLenPx; }
+              ctx.save();
+              ctx.fillStyle = 'rgba(226, 232, 240, 0.5)';
+              ctx.fillRect(rx, ry, rw, rh);
+              ctx.strokeStyle = '#94a3b8';
+              ctx.setLineDash([6, 6]);
+              ctx.lineWidth = 1.5;
+              ctx.strokeRect(rx, ry, rw, rh);
+              ctx.setLineDash([]);
+              ctx.fillStyle = '#475569';
+              ctx.font = '700 15px system-ui, sans-serif';
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.fillText('GAP ' + Math.round(gap.lengthCm), rx + rw / 2, ry + rh / 2);
+              ctx.restore();
+            });
+          });
+
+          // Sofa Pieces per wall
+          ['top', 'left', 'right', 'bottom'].forEach(function (wallKey) {
+            var geo = calc.wallGeometries[wallKey];
+            if (!geo.enabled) return;
+            geo.sections.forEach(function (sec) {
+              var cur = sec.startCm;
+              sec.pieces.forEach(function (piece) {
+                var pLenPx = sl(piece.size);
+                var colors = getPieceColor(piece.size);
+                var seam = 2.5;
+                var pieceLabel = formatCm(piece.size);
+                var rx = 0, ry = 0, rw = 0, rh = 0;
+                var bx = 0, by = 0, bw = 0, bh = 0;
+                var tx = 0, ty = 0;
+
+                if (wallKey === 'top') {
+                  rx = sx(cur) + seam / 2; ry = oy; rw = Math.max(6, pLenPx - seam); rh = dPx;
+                  bx = rx; by = oy; bw = rw; bh = backPx;
+                  tx = rx + rw / 2; ty = oy + backPx + (dPx - backPx) / 2;
+                } else if (wallKey === 'bottom') {
+                  rx = sx(cur) + seam / 2; ry = oy + drawD - dPx; rw = Math.max(6, pLenPx - seam); rh = dPx;
+                  bx = rx; by = oy + drawD - backPx; bw = rw; bh = backPx;
+                  tx = rx + rw / 2; ty = ry + (dPx - backPx) / 2;
+                } else if (wallKey === 'left') {
+                  rx = ox; ry = sy(cur) + seam / 2; rw = dPx; rh = Math.max(6, pLenPx - seam);
+                  bx = ox; by = ry; bw = backPx; bh = rh;
+                  tx = ox + backPx + (dPx - backPx) / 2; ty = ry + rh / 2;
+                } else if (wallKey === 'right') {
+                  rx = ox + drawW - dPx; ry = sy(cur) + seam / 2; rw = dPx; rh = Math.max(6, pLenPx - seam);
+                  bx = ox + drawW - backPx; by = ry; bw = backPx; bh = rh;
+                  tx = rx + (dPx - backPx) / 2; ty = ry + rh / 2;
+                }
+
+                drawRoundRectCanvas(ctx, rx, ry, rw, rh, 4, colors.fill, colors.stroke, 1.8);
+                ctx.fillStyle = colors.back;
+                ctx.fillRect(bx, by, bw, bh);
+                ctx.fillStyle = colors.text;
+                var minDim = Math.min(rw, rh);
+                ctx.font = '700 ' + (minDim < 44 ? 14 : 18) + 'px system-ui, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(pieceLabel, tx, ty);
+
+                cur += piece.size;
+              });
+            });
+          });
+
+          // Z Corners
+          var zPx = sl(zSize);
+          var zArm = Math.max(dPx + 4, zPx * 0.96);
+          ['topLeft', 'topRight', 'bottomLeft', 'bottomRight'].forEach(function (ck) {
+            if (zSize <= 0) return;
+            var isOn = !!p.corners[ck];
+            var isRec = !!recCornersMap[ck];
+            if (!isOn && !isRec) return;
+
+            var pts = [], lx = 0, ly = 0;
+            if (ck === 'topLeft') {
+              pts = [[ox, oy], [ox + zArm, oy], [ox + zArm, oy + dPx], [ox + dPx, oy + dPx], [ox + dPx, oy + zArm], [ox, oy + zArm]];
+              lx = ox + dPx * 0.52; ly = oy + dPx * 0.55;
+            } else if (ck === 'topRight') {
+              var rxx = ox + drawW;
+              pts = [[rxx, oy], [rxx - zArm, oy], [rxx - zArm, oy + dPx], [rxx - dPx, oy + dPx], [rxx - dPx, oy + zArm], [rxx, oy + zArm]];
+              lx = rxx - dPx * 0.52; ly = oy + dPx * 0.55;
+            } else if (ck === 'bottomLeft') {
+              var byy = oy + drawD;
+              pts = [[ox, byy], [ox + zArm, byy], [ox + zArm, byy - dPx], [ox + dPx, byy - dPx], [ox + dPx, byy - zArm], [ox, byy - zArm]];
+              lx = ox + dPx * 0.52; ly = byy - dPx * 0.45;
+            } else if (ck === 'bottomRight') {
+              var rxx2 = ox + drawW, byy2 = oy + drawD;
+              pts = [[rxx2, byy2], [rxx2 - zArm, byy2], [rxx2 - zArm, byy2 - dPx], [rxx2 - dPx, byy2 - dPx], [rxx2 - dPx, byy2 - zArm], [rxx2, byy2 - zArm]];
+              lx = rxx2 - dPx * 0.52; ly = byy2 - dPx * 0.45;
+            }
+
+            ctx.save();
+            ctx.beginPath();
+            pts.forEach(function (pt, idx) {
+              if (idx === 0) ctx.moveTo(pt[0], pt[1]); else ctx.lineTo(pt[0], pt[1]);
+            });
+            ctx.closePath();
+            if (isOn) {
+              ctx.fillStyle = SIZE_COLORS.z.fill;
+              ctx.fill();
+              ctx.strokeStyle = SIZE_COLORS.z.stroke;
+              ctx.lineWidth = 3;
+              ctx.stroke();
+              ctx.fillStyle = SIZE_COLORS.z.text;
+              ctx.font = '800 16px system-ui, sans-serif';
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.fillText('Z ' + formatCm(zSize), lx, ly);
+            } else if (isRec) {
+              ctx.fillStyle = 'rgba(254, 243, 199, 0.35)';
+              ctx.fill();
+              ctx.setLineDash([6, 4]);
+              ctx.strokeStyle = '#d97706';
+              ctx.lineWidth = 2;
+              ctx.stroke();
+              ctx.setLineDash([]);
+              ctx.fillStyle = '#b45309';
+              ctx.font = '700 15px system-ui, sans-serif';
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.fillText('+Z', lx, ly);
+            }
+            ctx.restore();
+          });
+
+          // Measurement Callout Badges Around All Active Sections
+          callouts.forEach(function (co) {
+            var cx = 0, cy = 0, ax = 0, ay = 0;
+            if (co.wallKey === 'top') { cx = sx(co.midCm); cy = oy - 74; ax = cx; ay = oy - 6; }
+            else if (co.wallKey === 'bottom') { cx = sx(co.midCm); cy = oy + drawD + 74; ax = cx; ay = oy + drawD + 6; }
+            else if (co.wallKey === 'left') { cx = ox - 122; cy = sy(co.midCm); ax = ox - 6; ay = cy; }
+            else if (co.wallKey === 'right') { cx = ox + drawW + 122; cy = sy(co.midCm); ax = ox + drawW + 6; ay = cy; }
+
+            var cw = 184, ch = 76;
+            var rx = cx - cw / 2, ry = cy - ch / 2;
+
+            // Subtle connector line
+            ctx.strokeStyle = '#94a3b8';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(ax, ay);
+            if (co.wallKey === 'top') ctx.lineTo(cx, ry + ch);
+            else if (co.wallKey === 'bottom') ctx.lineTo(cx, ry);
+            else if (co.wallKey === 'left') ctx.lineTo(rx + cw, cy);
+            else ctx.lineTo(rx, cy);
+            ctx.stroke();
+
+            drawRoundRectCanvas(ctx, rx, ry, cw, ch, 10, '#ffffff', '#cbd5e1', 1.8);
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            ctx.fillStyle = '#64748b';
+            ctx.font = '700 13px system-ui, sans-serif';
+            ctx.fillText((co.section.name || co.wallKey.toUpperCase()).slice(0, 22), cx, ry + 16);
+
+            var enteredStr = (co.section.enteredSize !== undefined && co.section.enteredSize !== null && String(co.section.enteredSize).trim() !== '')
+              ? String(co.section.enteredSize).trim() + ' cm'
+              : 'Empty';
+            ctx.fillStyle = '#0f172a';
+            ctx.font = '700 18px ui-monospace, Menlo, Consolas, monospace';
+            ctx.fillText(enteredStr, cx, ry + 39);
+
+            var grp = (co.section.pieces || []).filter(function (pc) { return pc.qty > 0 && pc.size > 0; })
+              .map(function (pc) { return formatCm(pc.size) + '×' + pc.qty; }).join('+');
+            ctx.fillStyle = grp ? '#1d4ed8' : '#94a3b8';
+            ctx.font = '700 14px ui-monospace, Menlo, Consolas, monospace';
+            ctx.fillText(grp || '0 pcs', cx, ry + 61);
+          });
+
+          // Center Calculation Summary Inside Room
+          var centerX = ox + drawW / 2;
+          var centerY = oy + drawD / 2;
+          var sumLines = calc.sizeGroups.map(function (sg) {
+            return { text: formatCm(sg.size) + ' = ' + sg.qty, color: (sg.size >= 200 ? '#1d4ed8' : '#0f172a') };
+          });
+          if (calc.zQuantity > 0) {
+            sumLines.push({ text: 'Z = ' + calc.zQuantity + ' (' + formatCm(calc.zSize) + ' cm)', color: '#b45309' });
+          }
+
+          if (sumLines.length === 0) {
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#64748b';
+            ctx.font = '700 22px system-ui, sans-serif';
+            ctx.fillText(tpl.shortName, centerX, centerY - 12);
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '600 18px system-ui, sans-serif';
+            ctx.fillText('0 pcs · 0 Z', centerX, centerY + 18);
+          } else {
+            var innerRoomH = Math.max(120, drawD - dPx * 2 - 30);
+            var lineH = Math.min(34, Math.max(20, Math.floor(innerRoomH / Math.max(sumLines.length + 2.4, 4))));
+            var fsMain = Math.min(24, Math.max(15, Math.round(lineH * 0.72)));
+            var totalBlockH = sumLines.length * lineH + lineH * 2.2;
+            var startY = centerY - totalBlockH / 2 + lineH * 0.5;
+
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            sumLines.forEach(function (ln, idx) {
+              ctx.fillStyle = ln.color;
+              ctx.font = '700 ' + fsMain + 'px ui-monospace, Menlo, Consolas, monospace';
+              ctx.fillText(ln.text, centerX, startY + idx * lineH);
+            });
+
+            var divY = startY + sumLines.length * lineH + 2;
+            ctx.strokeStyle = '#cbd5e1';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(centerX - 110, divY);
+            ctx.lineTo(centerX + 110, divY);
+            ctx.stroke();
+
+            ctx.fillStyle = '#1d4ed8';
+            ctx.font = '700 ' + Math.max(14, fsMain - 2) + 'px ui-monospace, Menlo, Consolas, monospace';
+            ctx.fillText('Total: ' + formatCm(calc.combinedTotalLength) + ' cm (' + formatMeters(calc.combinedTotalLength) + ')', centerX, divY + lineH * 0.75);
+
+            ctx.fillStyle = '#64748b';
+            ctx.font = '600 ' + Math.max(13, fsMain - 4) + 'px system-ui, sans-serif';
+            ctx.fillText(calc.totalStraightPieces + ' pcs · ' + calc.zQuantity + ' Z', centerX, divY + lineH * 1.55);
+          }
+
+          // Legend Row
+          var legendItems = [
+            { color: '#1d4ed8', label: '200–210' },
+            { color: '#0284c7', label: '180–199' },
+            { color: '#0d9488', label: '150–179' },
+            { color: '#4f46e5', label: '125–149' },
+            { color: '#3b82f6', label: '100–124' },
+            { color: '#7c3aed', label: '< 100' },
+            { color: '#fef3c7', border: '#d97706', label: 'Z Corner' },
+            { color: '#e2e8f0', border: '#94a3b8', label: 'Gap' }
+          ];
+          var lxPos = 52;
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'middle';
+          legendItems.forEach(function (li) {
+            drawRoundRectCanvas(ctx, lxPos, legendY + 4, 20, 20, 4, li.color, li.border || 'rgba(15,23,42,0.2)', 1.5);
+            ctx.fillStyle = '#334155';
+            ctx.font = '600 16px system-ui, sans-serif';
+            ctx.fillText(li.label, lxPos + 28, legendY + 14);
+            lxPos += ctx.measureText(li.label).width + 64;
+          });
+
+          // Complete Calculation & Wall Breakdown Panel at Bottom
+          drawRoundRectCanvas(ctx, 40, summaryY, 1520, footerH, 16, '#ffffff', '#cbd5e1', 1.5);
+
+          // Left Box: Piece Counts & Totals
+          ctx.fillStyle = '#0f172a';
+          ctx.font = '700 20px system-ui, sans-serif';
+          ctx.fillText('CALCULATION SUMMARY', 72, summaryY + 34);
+
+          ctx.fillStyle = '#334155';
+          ctx.font = '600 17px system-ui, sans-serif';
+          ctx.fillText('Straight Pieces: ' + calc.totalStraightPieces + ' pcs  ·  ' + formatCm(calc.straightTotalLength) + ' cm (' + formatMeters(calc.straightTotalLength) + ')', 72, summaryY + 68);
+          ctx.fillText('Z Corners: ' + calc.zQuantity + ' pcs × ' + formatCm(calc.zSize) + ' cm  =  ' + formatCm(calc.zTotalLength) + ' cm (' + formatMeters(calc.zTotalLength) + ')', 72, summaryY + 98);
+          ctx.fillStyle = '#1d4ed8';
+          ctx.font = '700 18px ui-monospace, Menlo, Consolas, monospace';
+          ctx.fillText('Combined Total: ' + formatCm(calc.combinedTotalLength) + ' cm (' + formatMeters(calc.combinedTotalLength) + ')', 72, summaryY + 130);
+
+          var syRow = summaryY + 168;
+          if (calc.sizeGroups.length === 0) {
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '600 16px system-ui, sans-serif';
+            ctx.fillText('No straight pieces added yet', 72, syRow);
+          } else {
+            calc.sizeGroups.forEach(function (sg) {
+              ctx.fillStyle = '#0f172a';
+              ctx.font = '700 16px ui-monospace, Menlo, Consolas, monospace';
+              ctx.fillText('• ' + formatCm(sg.size) + ' cm  ×  ' + sg.qty + ' pcs  =  ' + formatCm(sg.qty * sg.size) + ' cm', 72, syRow);
+              syRow += 30;
+            });
+          }
+
+          // Vertical Divider
+          ctx.strokeStyle = '#e2e8f0';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(760, summaryY + 24);
+          ctx.lineTo(760, summaryY + footerH - 24);
+          ctx.stroke();
+
+          // Right Box: Wall-by-Wall Breakdown
+          ctx.fillStyle = '#0f172a';
+          ctx.font = '700 20px system-ui, sans-serif';
+          ctx.fillText('WALL-BY-WALL BREAKDOWN', 796, summaryY + 34);
+
+          var wyRow = summaryY + 72;
+          ['top', 'left', 'right', 'bottom'].forEach(function (wk) {
+            var wall = p.walls[wk];
+            var geo = calc.wallGeometries[wk];
+            ctx.fillStyle = '#1e293b';
+            ctx.font = '700 16px system-ui, sans-serif';
+            ctx.fillText(wk.toUpperCase() + ':', 796, wyRow);
+
+            var desc = '';
+            if (!wall.enabled || wall.sections.length === 0) {
+              desc = 'Open / Empty Wall (0 pcs)';
+              ctx.fillStyle = '#94a3b8';
+            } else {
+              desc = wall.sections.map(function (s) {
+                var ent = (s.enteredSize && String(s.enteredSize).trim()) ? (String(s.enteredSize).trim() + ' cm -> ') : '';
+                var ps = (s.pieces || []).filter(function (x) { return x.qty > 0; }).map(function (x) { return formatCm(x.size) + '×' + x.qty; }).join('+');
+                return (wall.sections.length > 1 ? s.name + ': ' : '') + ent + (ps || 'Empty');
+              }).join('  |  ') + '  (' + geo.totalPiecesCount + ' pcs, ' + formatCm(geo.totalStraightLength) + ' cm)';
+              ctx.fillStyle = '#334155';
+            }
+            ctx.font = '600 15.5px ui-monospace, Menlo, Consolas, monospace';
+            ctx.fillText(desc.slice(0, 62), 886, wyRow);
+            wyRow += 36;
+          });
+
+          try {
+            canvas.toBlob(function (blob) {
+              if (blob) {
+                triggerDownload(blob, safeFileName(p.name) + '-complete-layout.png');
+                showToast('Complete layout & calculation downloaded.');
+              } else {
+                downloadPdfReport();
+              }
+            }, 'image/png');
+          } catch (err) {
+            downloadPdfReport();
+          }
+        }
+
+        function triggerDownload(blob, filename) {
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+        }
+
+        function safeFileName(str) {
+          return String(str || 'majlis-project').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'majlis-project';
+        }
+
+        /* =========================================================
+           8. MODALS, CONFIRMATIONS & SAVED PROJECTS MANAGER
+           ========================================================= */
+        var confirmCallback = null;
+
+        function openConfirmModal(title, message, onConfirm) {
+          document.getElementById('confirm-modal-title').textContent = title;
+          document.getElementById('confirm-modal-message').textContent = message;
+          confirmCallback = onConfirm;
+          document.getElementById('confirm-modal').classList.add('open');
+        }
+
+        function closeConfirmModal() {
+          document.getElementById('confirm-modal').classList.remove('open');
+          confirmCallback = null;
+        }
+
+        function renderSavedProjectsList() {
+          var list = document.getElementById('saved-projects-list');
+          if (state.savedProjects.length === 0) {
+            list.innerHTML = '<div class="empty-wall-state">No saved projects yet. Enter a name above and click "Save Copy" to store this layout.</div>';
+            return;
+          }
+
+          list.innerHTML = state.savedProjects.map(function (sp) {
+            var tpl = TEMPLATES[sp.templateId] || TEMPLATES.custom;
+            var c = computeCalculations(sp);
+            var isCurrent = sp.id === state.project.id;
+            return '<div class="saved-item' + (isCurrent ? ' current' : '') + '">' +
+              '<div>' +
+              '<div style="font-weight:700;font-size:0.9375rem;">' + escapeHtml(sp.name) + '</div>' +
+              '<div style="font-size:0.75rem;color:var(--text-secondary);">' +
+              escapeHtml(tpl.shortName) + ' · ' + sp.roomWidth + '×' + sp.roomDepth + ' cm · ' +
+              c.totalStraightPieces + ' pcs + ' + c.zQuantity + ' Z · ' + formatMeters(c.combinedTotalLength) +
+              '</div>' +
+              '</div>' +
+              '<div class="saved-item-actions">' +
+              '<button type="button" class="btn btn-primary btn-sm" data-saved-action="open" data-id="' + sp.id + '">Open</button>' +
+              '<button type="button" class="btn btn-secondary btn-sm" data-saved-action="duplicate" data-id="' + sp.id + '">Duplicate</button>' +
+              '<button type="button" class="btn btn-danger btn-sm" data-saved-action="delete" data-id="' + sp.id + '">Delete</button>' +
+              '</div>' +
+              '</div>';
+          }).join('');
+        }
+
+        function openProjectsModal() {
+          document.getElementById('save-as-name-input').value = state.project.name || '';
+          renderSavedProjectsList();
+          document.getElementById('projects-modal').classList.add('open');
+        }
+
+        function closeProjectsModal() {
+          document.getElementById('projects-modal').classList.remove('open');
+        }
+
+        var toastTimer = null;
+        function showToast(msg) {
+          var el = document.getElementById('toast');
+          el.textContent = msg;
+          el.classList.add('show');
+          if (toastTimer) clearTimeout(toastTimer);
+          toastTimer = setTimeout(function () {
+            el.classList.remove('show');
+          }, 2600);
+        }
+
+        /* =========================================================
+           9. EVENT WIRING
+           ========================================================= */
+        function findSection(wallKey, sectionId) {
+          var wall = state.project.walls[wallKey];
+          if (!wall || !wall.sections) return null;
+          for (var i = 0; i < wall.sections.length; i++) {
+            if (wall.sections[i].id === sectionId) return wall.sections[i];
+          }
+          return null;
+        }
+
+        function bindEvents() {
+          // Project name & room settings (never overwrite active input while user types)
+          document.getElementById('project-name-input').addEventListener('input', function (e) {
+            state.project.name = e.target.value;
+            persistCurrentProject();
+            var pt = document.getElementById('print-project-title');
+            if (pt) pt.textContent = state.project.name || 'Majlis Layout Report';
+          });
+
+          var zInput = document.getElementById('z-size-input');
+          zInput.addEventListener('input', function (e) {
+            var val = parseLocalizedNumber(e.target.value);
+            if (!isNaN(val) && val >= 0 && val <= 300) {
+              state.project.zSize = roundCm(val);
+              recalculateAllEnteredSections(false);
+              renderAll();
+            }
+          });
+          zInput.addEventListener('blur', function () {
+            zInput.value = String(state.project.zSize);
+          });
+
+          // Template selection (preserves user's Z Size setting)
+          document.getElementById('templates-grid').addEventListener('click', function (e) {
+            var card = e.target.closest('[data-template-id]');
+            if (!card) return;
+            var tplId = card.getAttribute('data-template-id');
+            var currentName = state.project.name;
+            var currentZSize = getNormalizedZSize(state.project);
+            state.project = createProjectFromTemplate(tplId, currentName && currentName.indexOf('Majlis - ') !== 0 ? currentName : null);
+            state.project.zSize = currentZSize;
+            state.validationErrors = {};
+            state.activeWallTab = 'top';
+            renderAll();
+            showToast('Switched to ' + TEMPLATES[tplId].shortName);
+          });
+
+          document.getElementById('promote-custom-btn').addEventListener('click', function () {
+            state.project.templateId = 'custom';
+            renderAll();
+            showToast('Custom Layout active.');
+          });
+
+          // Z corner toggles
+          document.getElementById('z-toggles-grid').addEventListener('click', function (e) {
+            var btn = e.target.closest('[data-corner-key]');
+            if (!btn) return;
+            var key = btn.getAttribute('data-corner-key');
+            state.project.corners[key] = !state.project.corners[key];
+            recalculateAllEnteredSections(false);
+            renderAll();
+          });
+
+          // Custom controls bar
+          var customBar = document.getElementById('custom-controls-bar');
+          customBar.addEventListener('click', function (e) {
+            var wallBtn = e.target.closest('[data-custom-wall]');
+            if (wallBtn) {
+              var wk = wallBtn.getAttribute('data-custom-wall');
+              var wall = state.project.walls[wk];
+              wall.enabled = !wall.enabled;
+              if (wall.enabled && (!wall.sections || wall.sections.length === 0)) {
+                wall.sections = [{ id: uid('sec'), name: wk.charAt(0).toUpperCase() + wk.slice(1), anchor: 'start', startPos: 0, guideStartRatio: 0, guideEndRatio: 1, pieces: [] }];
+              }
+              renderAll();
+              return;
+            }
+
+            if (e.target.id === 'custom-add-split-btn') {
+              var targetWallKey = ['bottom', 'top', 'left', 'right'].find(function (wk) {
+                return state.project.walls[wk] && state.project.walls[wk].enabled;
+              }) || 'top';
+              var targetWall = state.project.walls[targetWallKey];
+              targetWall.enabled = true;
+              targetWall.sections = targetWall.sections || [];
+              targetWall.sections.push({
+                id: uid('sec'),
+                name: targetWallKey.charAt(0).toUpperCase() + targetWallKey.slice(1) + ' #' + (targetWall.sections.length + 1),
+                anchor: targetWall.sections.length === 0 ? 'start' : 'end',
+                startPos: 0,
+                guideStartRatio: targetWall.sections.length === 0 ? 0 : 0.62,
+                guideEndRatio: 1,
+                pieces: []
+              });
+              renderAll();
+              return;
+            }
+
+            var remBtn = e.target.closest('[data-custom-remove]');
+            if (remBtn) {
+              var rw = remBtn.getAttribute('data-custom-remove');
+              var rs = remBtn.getAttribute('data-custom-sec');
+              var wallObj = state.project.walls[rw];
+              if (wallObj) {
+                wallObj.sections = wallObj.sections.filter(function (s) { return s.id !== rs; });
+                if (wallObj.sections.length === 0) wallObj.enabled = false;
+                renderAll();
+              }
+            }
+          });
+
+          customBar.addEventListener('change', function (e) {
+            var sel = e.target.closest('[data-custom-anchor]');
+            if (!sel) return;
+            var wk = sel.getAttribute('data-custom-anchor');
+            var secId = sel.getAttribute('data-custom-sec');
+            var sec = findSection(wk, secId);
+            if (!sec) return;
+            sec.anchor = sel.value;
+            if (sec.anchor === 'custom' && (sec.startPos == null || sec.startPos === 0)) {
+              sec.startPos = 100;
+            }
+            renderAll();
+          });
+
+          customBar.addEventListener('input', function (e) {
+            var inp = e.target.closest('[data-custom-offset]');
+            if (!inp) return;
+            var wk = inp.getAttribute('data-custom-offset');
+            var secId = inp.getAttribute('data-custom-sec');
+            var sec = findSection(wk, secId);
+            if (!sec) return;
+            var num = parseLocalizedNumber(inp.value);
+            if (!isNaN(num) && num >= 0 && num <= 3000) {
+              sec.startPos = Math.round(num);
+              persistCurrentProject();
+              renderFloorPlan(computeCalculations(state.project));
+            }
+          });
+
+          // Clickable SVG Z corner slots & wall segments (focuses matching diagram input box)
+          document.getElementById('floorplan-svg').addEventListener('click', function (e) {
+            var zHit = e.target.closest('[data-svg-corner]');
+            if (zHit) {
+              var ck = zHit.getAttribute('data-svg-corner');
+              state.project.corners[ck] = !state.project.corners[ck];
+              recalculateAllEnteredSections(false);
+              renderAll();
+              return;
+            }
+            var hit = e.target.closest('[data-wall]');
+            if (!hit) return;
+            var wk = hit.getAttribute('data-wall');
+            var firstInput = document.querySelector('.diagram-size-input[data-diagram-wall="' + wk + '"]');
+            if (firstInput) firstInput.focus();
+          });
+
+          function decomposeLengthToPieces(straightCm) {
+            var L = roundCm(straightCm);
+            if (L <= 0) return [];
+
+            // Automatic minimum equal division with strict MAX_PIECE_SIZE = 210 cm cap.
+            // Choosing k = ceil(L / 210) guarantees:
+            //   1) minimum possible number of pieces k
+            //   2) all k pieces have equal size <= 210 cm
+            //   3) each piece is as large as possible toward the 200-210 cm target range
+            var k = Math.max(1, Math.ceil(L / MAX_PIECE_SIZE));
+            var rawPiece = L / k;
+            var pieceSize;
+
+            if (Math.abs(rawPiece - Math.round(rawPiece)) < 1e-6) {
+              pieceSize = Math.round(rawPiece);
+            } else {
+              pieceSize = Math.round(rawPiece * 10) / 10;
+              if (pieceSize > MAX_PIECE_SIZE) {
+                pieceSize = Math.floor(rawPiece * 10) / 10;
+              }
+            }
+
+            if (pieceSize > MAX_PIECE_SIZE) {
+              k += 1;
+              rawPiece = L / k;
+              pieceSize = Math.floor(rawPiece * 10) / 10;
+            }
+
+            if (pieceSize <= 0) return [];
+            return [{ id: uid('p'), size: pieceSize, qty: k }];
+          }
+
+          function getTouchingCornersForSection(wallKey, sec, cornerSource) {
+            var list = [];
+            var r0 = (typeof sec.guideStartRatio === 'number') ? sec.guideStartRatio : 0;
+            var r1 = (typeof sec.guideEndRatio === 'number') ? sec.guideEndRatio : 1;
+            var touchesStart = (sec.anchor !== 'end' && r0 === 0);
+            var touchesEnd = (sec.anchor === 'end' || r1 === 1);
+            if (wallKey === 'top') {
+              if (touchesStart && cornerSource.topLeft) list.push('topLeft');
+              if (touchesEnd && cornerSource.topRight) list.push('topRight');
+            } else if (wallKey === 'bottom') {
+              if (touchesStart && cornerSource.bottomLeft) list.push('bottomLeft');
+              if (touchesEnd && cornerSource.bottomRight) list.push('bottomRight');
+            } else if (wallKey === 'left') {
+              if (touchesStart && cornerSource.topLeft) list.push('topLeft');
+              if (touchesEnd && cornerSource.bottomLeft) list.push('bottomLeft');
+            } else if (wallKey === 'right') {
+              if (touchesStart && cornerSource.topRight) list.push('topRight');
+              if (touchesEnd && cornerSource.bottomRight) list.push('bottomRight');
+            }
+            return list;
+          }
+
+          function applyAutoDivisionToSection(wk, sec, autoActivateRecommended) {
+            var rawVal = sec.enteredSize;
+            if (rawVal === undefined || rawVal === null || String(rawVal).trim() === '') {
+              sec.pieces = [];
+              return false;
+            }
+            var totalCm = parseLocalizedNumber(rawVal);
+            var zSize = getNormalizedZSize(state.project);
+            if (isNaN(totalCm) || totalCm <= 0) {
+              sec.pieces = [];
+              return false;
+            }
+
+            var recSource = state.project.templateId !== 'custom'
+              ? (state.project.recommendedCorners || (TEMPLATES[state.project.templateId] && TEMPLATES[state.project.templateId].recommendedCorners) || state.project.corners)
+              : state.project.corners;
+
+            var touching = getTouchingCornersForSection(wk, sec, recSource);
+            var cornerCount = touching.length;
+
+            if (autoActivateRecommended && state.project.templateId !== 'custom' && cornerCount > 0 && totalCm > cornerCount * zSize) {
+              touching.forEach(function (ck) {
+                state.project.corners[ck] = true;
+              });
+            }
+
+            var activeTouching = getTouchingCornersForSection(wk, sec, state.project.corners).length;
+            var zDeduction = (totalCm > activeTouching * zSize) ? (activeTouching * zSize) : 0;
+            var straightCm = Math.max(0, roundCm(totalCm - zDeduction));
+
+            sec.pieces = decomposeLengthToPieces(straightCm);
+            return true;
+          }
+
+          function recalculateAllEnteredSections(autoActivateRecommended) {
+            ['top', 'left', 'right', 'bottom'].forEach(function (wk) {
+              var wall = state.project.walls[wk];
+              if (!wall || !wall.enabled) return;
+              (wall.sections || []).forEach(function (sec) {
+                if (sec.enteredSize !== undefined && sec.enteredSize !== null && String(sec.enteredSize).trim() !== '') {
+                  applyAutoDivisionToSection(wk, sec, autoActivateRecommended);
+                }
+              });
+            });
+          }
+
+          // Direct input boxes placed around the 2D Floor Plan (never destroys active input DOM node!)
+          document.getElementById('diagram-inputs-overlay').addEventListener('input', function (e) {
+            var inp = e.target.closest('.diagram-size-input');
+            if (!inp) return;
+            var wk = inp.getAttribute('data-diagram-wall');
+            var secId = inp.getAttribute('data-diagram-section');
+            var sec = findSection(wk, secId);
+            if (!sec) return;
+
+            var rawVal = inp.value;
+            sec.enteredSize = rawVal;
+            var totalCm = parseLocalizedNumber(rawVal);
+
+            if (!applyAutoDivisionToSection(wk, sec, true)) {
+              renderAll();
+              return;
+            }
+
+            // Smartly adjust room dimensions if a full-wall measurement was entered
+            var wall = state.project.walls[wk];
+            var isFullWall = wall.sections.length === 1 &&
+              ((typeof sec.guideStartRatio !== 'number' || sec.guideStartRatio === 0) &&
+               (typeof sec.guideEndRatio !== 'number' || sec.guideEndRatio === 1));
+
+            if ((wk === 'top' || wk === 'bottom') && isFullWall && totalCm >= 150) {
+              state.project.roomWidth = Math.round(totalCm);
+            } else if ((wk === 'left' || wk === 'right') && isFullWall && totalCm >= 150) {
+              state.project.roomDepth = Math.round(totalCm);
+            } else if (wk === 'bottom' && wall.sections.length === 2) {
+              var s0 = wall.sections[0];
+              var s1 = wall.sections[1];
+              var len0 = parseLocalizedNumber(s0.enteredSize) || 0;
+              var len1 = parseLocalizedNumber(s1.enteredSize) || 0;
+              if (len0 + len1 + 80 > state.project.roomWidth) {
+                state.project.roomWidth = Math.round(len0 + len1 + 80);
+              }
+            }
+
+            state.activeWallTab = wk;
+            renderAll();
+          });
+
+          // Topbar / Project buttons
+          document.getElementById('header-print-btn').addEventListener('click', function () { window.print(); });
+          document.getElementById('print-layout-btn').addEventListener('click', function () { window.print(); });
+          document.getElementById('download-pdf-btn').addEventListener('click', downloadPdfReport);
+          document.getElementById('download-report-btn').addEventListener('click', downloadTextReport);
+          document.getElementById('bottom-download-btn').addEventListener('click', downloadCompleteImage);
+
+          document.getElementById('new-project-btn').addEventListener('click', function () {
+            openConfirmModal(
+              'Create New Project',
+              'Start a fresh project? Your saved projects stay safe, and any unsaved changes to the current draft will be replaced.',
+              function () {
+                state.project = createProjectFromTemplate('template1', 'New Majlis Project');
+                state.validationErrors = {};
+                state.activeWallTab = 'top';
+                renderAll();
+                showToast('Created new Majlis project.');
+              }
+            );
+          });
+
+          document.getElementById('reset-project-btn').addEventListener('click', function () {
+            openConfirmModal(
+              'Reset Current Project',
+              'Reset all walls, pieces, and room dimensions back to the selected template defaults?',
+              function () {
+                var tplId = state.project.templateId;
+                var keepName = state.project.name;
+                state.project = createProjectFromTemplate(tplId, keepName);
+                state.validationErrors = {};
+                renderAll();
+                showToast('Project reset to template defaults.');
+              }
+            );
+          });
+
+          // Saved Projects Modal
+          document.getElementById('open-projects-nav-btn').addEventListener('click', openProjectsModal);
+          document.getElementById('manage-projects-btn').addEventListener('click', openProjectsModal);
+          document.getElementById('save-project-btn').addEventListener('click', openProjectsModal);
+          document.getElementById('close-projects-modal-btn').addEventListener('click', closeProjectsModal);
+
+          document.getElementById('projects-modal').addEventListener('click', function (e) {
+            if (e.target.id === 'projects-modal') closeProjectsModal();
+          });
+
+          document.getElementById('confirm-save-as-btn').addEventListener('click', function () {
+            var name = document.getElementById('save-as-name-input').value.trim() || state.project.name || 'Saved Majlis';
+            var existingIdx = state.savedProjects.findIndex(function (x) { return x.id === state.project.id; });
+            var copy = deepClone(state.project);
+            copy.name = name;
+            copy.updatedAt = new Date().toISOString();
+            if (existingIdx !== -1 && state.savedProjects[existingIdx].name === name) {
+              state.savedProjects[existingIdx] = copy;
+              state.project.name = name;
+            } else {
+              copy.id = uid('proj');
+              state.project.id = copy.id;
+              state.project.name = name;
+              state.savedProjects.unshift(copy);
+            }
+            persistSavedProjects();
+            renderSavedProjectsList();
+            renderAll();
+            showToast('Saved "' + name + '" to browser storage.');
+          });
+
+          document.getElementById('saved-projects-list').addEventListener('click', function (e) {
+            var btn = e.target.closest('[data-saved-action]');
+            if (!btn) return;
+            var action = btn.getAttribute('data-saved-action');
+            var id = btn.getAttribute('data-id');
+            var item = state.savedProjects.find(function (x) { return x.id === id; });
+            if (!item) return;
+
+            if (action === 'open') {
+              state.project = deepClone(item);
+              state.validationErrors = {};
+              state.activeWallTab = 'top';
+              closeProjectsModal();
+              renderAll();
+              showToast('Opened "' + item.name + '".');
+            } else if (action === 'duplicate') {
+              var dup = deepClone(item);
+              dup.id = uid('proj');
+              dup.name = item.name + ' (Copy)';
+              dup.updatedAt = new Date().toISOString();
+              state.savedProjects.unshift(dup);
+              persistSavedProjects();
+              renderSavedProjectsList();
+              document.getElementById('saved-count-label').textContent = String(state.savedProjects.length);
+              showToast('Duplicated project.');
+            } else if (action === 'delete') {
+              openConfirmModal(
+                'Delete Saved Project',
+                'Permanently delete "' + item.name + '" from saved projects?',
+                function () {
+                  state.savedProjects = state.savedProjects.filter(function (x) { return x.id !== id; });
+                  persistSavedProjects();
+                  renderSavedProjectsList();
+                  document.getElementById('saved-count-label').textContent = String(state.savedProjects.length);
+                  showToast('Deleted saved project.');
+                }
+              );
+            }
+          });
+
+          // Confirm modal buttons
+          document.getElementById('confirm-cancel-btn').addEventListener('click', closeConfirmModal);
+          document.getElementById('confirm-ok-btn').addEventListener('click', function () {
+            var cb = confirmCallback;
+            closeConfirmModal();
+            if (cb) cb();
+          });
+        }
+
+        function escapeHtml(str) {
+          return String(str == null ? '' : str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+        }
+
+        function escapeAttr(str) {
+          return escapeHtml(str).replace(/'/g, '&#39;');
+        }
+
+        function setupPWA() {
+          var installBtn = document.getElementById('pwa-install-btn');
+          var iosModal = document.getElementById('ios-install-modal');
+          var closeIosBtn = document.getElementById('close-ios-install-btn');
+          var okIosBtn = document.getElementById('ok-ios-install-btn');
+          var offlineBanner = document.getElementById('offline-indicator');
+
+          function updateOnlineIndicator() {
+            if (!offlineBanner) return;
+            var isOnline = (typeof navigator !== 'undefined' && navigator.onLine !== undefined) ? navigator.onLine : true;
+            if (isOnline) {
+              offlineBanner.classList.remove('visible');
+            } else {
+              offlineBanner.classList.add('visible');
+            }
+          }
+
+          window.addEventListener('online', updateOnlineIndicator);
+          window.addEventListener('offline', updateOnlineIndicator);
+          updateOnlineIndicator();
+
+          var isStandalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
+            (window.navigator && window.navigator.standalone === true);
+
+          if (isStandalone || !installBtn) return;
+
+          var deferredPrompt = null;
+          var isIOS = /iphone|ipad|ipod/i.test((window.navigator && window.navigator.userAgent) || '');
+
+          if (isIOS) {
+            installBtn.style.display = 'inline-flex';
+          }
+
+          window.addEventListener('beforeinstallprompt', function (e) {
+            e.preventDefault();
+            deferredPrompt = e;
+            installBtn.style.display = 'inline-flex';
+          });
+
+          window.addEventListener('appinstalled', function () {
+            deferredPrompt = null;
+            installBtn.style.display = 'none';
+            showToast('App installed to home screen.');
+          });
+
+          installBtn.addEventListener('click', function () {
+            if (deferredPrompt) {
+              deferredPrompt.prompt();
+              if (deferredPrompt.userChoice && typeof deferredPrompt.userChoice.then === 'function') {
+                deferredPrompt.userChoice.then(function (choice) {
+                  if (choice && choice.outcome === 'accepted') {
+                    installBtn.style.display = 'none';
+                  }
+                  deferredPrompt = null;
+                });
+              }
+            } else if (isIOS && iosModal) {
+              iosModal.classList.add('open');
+            }
+          });
+
+          if (closeIosBtn && iosModal) {
+            closeIosBtn.addEventListener('click', function () { iosModal.classList.remove('open'); });
+          }
+          if (okIosBtn && iosModal) {
+            okIosBtn.addEventListener('click', function () { iosModal.classList.remove('open'); });
+          }
+          if (iosModal) {
+            iosModal.addEventListener('click', function (e) {
+              if (e.target && e.target.id === 'ios-install-modal') iosModal.classList.remove('open');
+            });
+          }
+        }
+
+        // Initialize application
+        loadFromStorage();
+        bindEvents();
+        renderAll();
+        setupPWA();
+      })();
+    </script>
+  </body>
+</html>

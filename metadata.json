@@ -1,0 +1,6 @@
+{
+  "name": "Majlis & Musanad Layout Calculator",
+  "description": "Offline-capable Majlis and Musanad sofa piece calculator, 2D floor-plan layout maker, and printable architectural specification generator.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
