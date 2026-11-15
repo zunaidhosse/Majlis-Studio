@@ -103,6 +103,131 @@
         gap: 32px;
       }
 
+      .topbar-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+        flex-shrink: 0;
+      }
+
+      .info-menu-wrap {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+      }
+
+      .info-icon-btn {
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        border: 1px solid var(--border-strong);
+        background: var(--surface-solid);
+        color: var(--text-primary);
+        cursor: pointer;
+        transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease, transform 0.12s ease;
+      }
+
+      .info-icon-btn:hover,
+      .info-icon-btn[aria-expanded="true"] {
+        background: var(--brand-blue-soft);
+        border-color: var(--brand-blue);
+        color: var(--brand-blue);
+      }
+
+      .info-icon-btn:active {
+        transform: translateY(1px);
+      }
+
+      .info-dropdown {
+        position: absolute;
+        top: calc(100% + 8px);
+        left: 0;
+        min-width: 210px;
+        background: #ffffff;
+        border: 1px solid var(--border-strong);
+        border-radius: var(--radius-md);
+        box-shadow: 0 14px 36px rgba(15, 23, 42, 0.16);
+        padding: 6px;
+        display: none;
+        flex-direction: column;
+        gap: 4px;
+        z-index: 90;
+      }
+
+      .info-dropdown.open {
+        display: flex;
+      }
+
+      .info-menu-item {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 8px;
+        border: none;
+        background: transparent;
+        color: var(--text-primary);
+        font-family: inherit;
+        font-size: 0.9375rem;
+        font-weight: 600;
+        text-decoration: none;
+        text-align: left;
+        cursor: pointer;
+        transition: background-color 0.14s ease, color 0.14s ease;
+      }
+
+      .info-menu-item:hover {
+        background: var(--brand-blue-soft);
+        color: var(--brand-blue);
+      }
+
+      .qr-share-body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        padding: 6px 0;
+      }
+
+      .qr-box {
+        width: 240px;
+        height: 240px;
+        padding: 12px;
+        background: #ffffff;
+        border: 1px solid var(--border-hairline);
+        border-radius: var(--radius-md);
+        box-shadow: 0 6px 20px rgba(15, 23, 42, 0.08);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .qr-box svg {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+
+      .qr-url-box {
+        width: 100%;
+        padding: 8px 12px;
+        background: var(--surface-subtle);
+        border: 1px solid var(--border-hairline);
+        border-radius: var(--radius-sm);
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-align: center;
+        word-break: break-all;
+        direction: ltr;
+      }
+
       .brand-wordmark {
         font-size: 1.125rem;
         font-weight: 700;
@@ -990,7 +1115,55 @@
     <!-- Top Bar -->
     <header class="topbar">
       <div class="topbar-inner">
-        <a href="#top" class="brand-wordmark">Majlis Studio</a>
+        <div class="topbar-left">
+          <div class="info-menu-wrap" id="info-menu-wrap">
+            <button
+              type="button"
+              class="info-icon-btn"
+              id="info-menu-btn"
+              aria-label="Info and Share menu"
+              aria-haspopup="true"
+              aria-expanded="false"
+              title="Info &amp; Share"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <circle cx="12" cy="8" r="0.85" fill="currentColor" stroke="none"></circle>
+              </svg>
+            </button>
+            <div class="info-dropdown" id="info-dropdown" role="menu" aria-labelledby="info-menu-btn">
+              <a
+                href="https://zunaidhosse.github.io/My-contact/"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="info-menu-item"
+                id="helpline-link"
+                role="menuitem"
+              >
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                </svg>
+                <span>হেল্প লাইন</span>
+              </a>
+              <button
+                type="button"
+                class="info-menu-item"
+                id="apps-share-btn"
+                role="menuitem"
+              >
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <rect x="3" y="3" width="7" height="7"></rect>
+                  <rect x="14" y="3" width="7" height="7"></rect>
+                  <rect x="3" y="14" width="7" height="7"></rect>
+                  <path d="M14 14h3v3h-3zM20 14v3h-3M14 20h3v-3M20 20h1"></path>
+                </svg>
+                <span>apps share</span>
+              </button>
+            </div>
+          </div>
+          <a href="#top" class="brand-wordmark">Majlis Studio</a>
+        </div>
         <nav class="nav-links" aria-label="Primary Navigation">
           <a href="#templates-section" class="nav-link">Layouts</a>
           <a href="#floorplan-section" class="nav-link">Floor Plan</a>
@@ -1146,6 +1319,24 @@
         </p>
         <div style="display:flex;justify-content:flex-end;margin-top:8px;">
           <button type="button" class="btn btn-primary btn-sm" id="ok-ios-install-btn">Got it</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Apps Share QR Code Modal -->
+    <div class="modal-backdrop" id="qr-share-modal" role="dialog" aria-modal="true" aria-labelledby="qr-share-title">
+      <div class="modal-card" style="max-width:380px;">
+        <div class="modal-head">
+          <h3 class="modal-title" id="qr-share-title">Apps Share</h3>
+          <button type="button" class="btn btn-ghost btn-sm" id="close-qr-share-btn">Close</button>
+        </div>
+        <div class="qr-share-body">
+          <div class="qr-box" id="qr-code-container" aria-label="QR Code for https://majlis-studio-six.vercel.app/"></div>
+          <div class="qr-url-box" id="qr-share-url">https://majlis-studio-six.vercel.app/</div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px;">
+          <button type="button" class="btn btn-secondary btn-sm" id="copy-share-url-btn">Copy Link</button>
+          <button type="button" class="btn btn-primary btn-sm" id="done-qr-share-btn">Done</button>
         </div>
       </div>
     </div>
@@ -3741,6 +3932,430 @@
           return escapeHtml(str).replace(/'/g, '&#39;');
         }
 
+        // Offline ISO/IEC 18004 QR Code SVG Generator (Byte mode, ECC Level M, Versions 1-4)
+        var APP_SHARE_URL = 'https://majlis-studio-six.vercel.app/';
+
+        function generateQrMatrix(text) {
+          var bytes = [];
+          for (var i = 0; i < text.length; i++) {
+            var code = text.charCodeAt(i);
+            if (code < 0x80) {
+              bytes.push(code);
+            } else if (code < 0x800) {
+              bytes.push(0xc0 | (code >> 6), 0x80 | (code & 0x3f));
+            } else {
+              bytes.push(0xe0 | (code >> 12), 0x80 | ((code >> 6) & 0x3f), 0x80 | (code & 0x3f));
+            }
+          }
+
+          // ECC Level M specs for Versions 1..4:
+          // [version, size, totalDataCodewords, ecPerBlock, blocks, alignPositions]
+          var specs = [
+            { v: 1, size: 21, dataCw: 16, ecCw: 10, blocks: 1, align: [] },
+            { v: 2, size: 25, dataCw: 28, ecCw: 16, blocks: 1, align: [6, 18] },
+            { v: 3, size: 29, dataCw: 44, ecCw: 26, blocks: 1, align: [6, 22] },
+            { v: 4, size: 33, dataCw: 64, ecCw: 18, blocks: 2, align: [6, 26] }
+          ];
+          var spec = null;
+          for (var sIdx = 0; sIdx < specs.length; sIdx++) {
+            if (bytes.length + 2 <= specs[sIdx].dataCw) {
+              spec = specs[sIdx];
+              break;
+            }
+          }
+          if (!spec) spec = specs[specs.length - 1];
+
+          // GF(256) log / exp tables with primitive polynomial 0x11d
+          var gfExp = new Array(512);
+          var gfLog = new Array(256);
+          var x = 1;
+          for (var e = 0; e < 255; e++) {
+            gfExp[e] = x;
+            gfLog[x] = e;
+            x <<= 1;
+            if (x & 0x100) x ^= 0x11d;
+          }
+          for (var e2 = 255; e2 < 512; e2++) gfExp[e2] = gfExp[e2 - 255];
+
+          function gfMul(a, b) {
+            if (a === 0 || b === 0) return 0;
+            return gfExp[gfLog[a] + gfLog[b]];
+          }
+
+          function rsGenerator(degree) {
+            var poly = [1];
+            for (var d = 0; d < degree; d++) {
+              var next = new Array(poly.length + 1).fill(0);
+              var factor = gfExp[d];
+              for (var p = 0; p < poly.length; p++) {
+                next[p] ^= poly[p];
+                next[p + 1] ^= gfMul(poly[p], factor);
+              }
+              poly = next;
+            }
+            return poly;
+          }
+
+          function rsRemainder(data, ecLen) {
+            var gen = rsGenerator(ecLen);
+            var res = data.slice();
+            for (var k = 0; k < ecLen; k++) res.push(0);
+            for (var dIdx = 0; dIdx < data.length; dIdx++) {
+              var coef = res[dIdx];
+              if (coef !== 0) {
+                for (var gIdx = 0; gIdx < gen.length; gIdx++) {
+                  res[dIdx + gIdx] ^= gfMul(gen[gIdx], coef);
+                }
+              }
+            }
+            return res.slice(data.length);
+          }
+
+          // Encode bit stream: Mode 0100 (Byte), 8-bit length, payload, terminator, pad bytes
+          var bits = [];
+          function pushBits(val, len) {
+            for (var b = len - 1; b >= 0; b--) bits.push((val >> b) & 1);
+          }
+          pushBits(4, 4);
+          pushBits(bytes.length, 8);
+          for (var bi = 0; bi < bytes.length; bi++) pushBits(bytes[bi], 8);
+          var maxDataBits = spec.dataCw * 8;
+          var termLen = Math.min(4, maxDataBits - bits.length);
+          pushBits(0, termLen);
+          while (bits.length % 8 !== 0) bits.push(0);
+
+          var codewords = [];
+          for (var cIdx = 0; cIdx < bits.length; cIdx += 8) {
+            var byteVal = 0;
+            for (var bit = 0; bit < 8; bit++) byteVal = (byteVal << 1) | bits[cIdx + bit];
+            codewords.push(byteVal);
+          }
+          var padBytes = [0xec, 0x11];
+          var padToggle = 0;
+          while (codewords.length < spec.dataCw) {
+            codewords.push(padBytes[padToggle]);
+            padToggle ^= 1;
+          }
+
+          // Split into RS blocks & interleave
+          var blockLen = Math.floor(spec.dataCw / spec.blocks);
+          var dataBlocks = [];
+          var ecBlocks = [];
+          for (var blk = 0; blk < spec.blocks; blk++) {
+            var slice = codewords.slice(blk * blockLen, (blk + 1) * blockLen);
+            dataBlocks.push(slice);
+            ecBlocks.push(rsRemainder(slice, spec.ecCw));
+          }
+
+          var allCodewords = [];
+          for (var di = 0; di < blockLen; di++) {
+            for (var db = 0; db < spec.blocks; db++) allCodewords.push(dataBlocks[db][di]);
+          }
+          for (var ei = 0; ei < spec.ecCw; ei++) {
+            for (var eb = 0; eb < spec.blocks; eb++) allCodewords.push(ecBlocks[eb][ei]);
+          }
+
+          var allBits = [];
+          for (var cwIdx = 0; cwIdx < allCodewords.length; cwIdx++) {
+            for (var bPos = 7; bPos >= 0; bPos--) allBits.push((allCodewords[cwIdx] >> bPos) & 1);
+          }
+          // Remainder bits for versions 2..4 = 7
+          if (spec.v >= 2) {
+            for (var rb = 0; rb < 7; rb++) allBits.push(0);
+          }
+
+          var n = spec.size;
+          var modules = [];
+          var isFunc = [];
+          for (var r = 0; r < n; r++) {
+            modules.push(new Array(n).fill(0));
+            isFunc.push(new Array(n).fill(false));
+          }
+
+          function setFunc(row, col, val) {
+            if (row < 0 || col < 0 || row >= n || col >= n) return;
+            modules[row][col] = val ? 1 : 0;
+            isFunc[row][col] = true;
+          }
+
+          function drawFinder(top, left) {
+            for (var dy = -1; dy <= 7; dy++) {
+              for (var dx = -1; dx <= 7; dx++) {
+                var rr = top + dy;
+                var cc = left + dx;
+                if (rr < 0 || cc < 0 || rr >= n || cc >= n) continue;
+                var on = (dx >= 0 && dx <= 6 && dy >= 0 && dy <= 6) &&
+                  (dx === 0 || dx === 6 || dy === 0 || dy === 6 || (dx >= 2 && dx <= 4 && dy >= 2 && dy <= 4));
+                setFunc(rr, cc, on);
+              }
+            }
+          }
+
+          function drawAlignment(cy, cx) {
+            for (var dy = -2; dy <= 2; dy++) {
+              for (var dx = -2; dx <= 2; dx++) {
+                var on = Math.abs(dx) === 2 || Math.abs(dy) === 2 || (dx === 0 && dy === 0);
+                setFunc(cy + dy, cx + dx, on);
+              }
+            }
+          }
+
+          drawFinder(0, 0);
+          drawFinder(0, n - 7);
+          drawFinder(n - 7, 0);
+
+          // Timing patterns
+          for (var t = 8; t < n - 8; t++) {
+            setFunc(6, t, t % 2 === 0);
+            setFunc(t, 6, t % 2 === 0);
+          }
+
+          // Alignment patterns
+          if (spec.align.length >= 2) {
+            for (var ai = 0; ai < spec.align.length; ai++) {
+              for (var aj = 0; aj < spec.align.length; aj++) {
+                var ay = spec.align[ai];
+                var ax = spec.align[aj];
+                if (!isFunc[ay][ax]) drawAlignment(ay, ax);
+              }
+            }
+          }
+
+          // Reserve format info & dark module
+          setFunc(n - 8, 8, true);
+          for (var f = 0; f < 9; f++) {
+            if (f !== 6) {
+              setFunc(8, f, false);
+              setFunc(f, 8, false);
+            }
+          }
+          for (var f2 = 0; f2 < 8; f2++) {
+            setFunc(8, n - 1 - f2, false);
+            if (f2 < 7) setFunc(n - 1 - f2, 8, false);
+          }
+
+          // Place data bits in zig-zag columns
+          var bitIdx = 0;
+          var upward = true;
+          for (var col = n - 1; col >= 1; col -= 2) {
+            if (col === 6) col--;
+            for (var step = 0; step < n; step++) {
+              var row = upward ? n - 1 - step : step;
+              for (var sub = 0; sub < 2; sub++) {
+                var c = col - sub;
+                if (!isFunc[row][c]) {
+                  modules[row][c] = bitIdx < allBits.length ? allBits[bitIdx++] : 0;
+                }
+              }
+            }
+            upward = !upward;
+          }
+
+          function applyMaskAndFormat(maskId) {
+            var mat = modules.map(function (rowArr) { return rowArr.slice(); });
+            for (var rr = 0; rr < n; rr++) {
+              for (var cc = 0; cc < n; cc++) {
+                if (isFunc[rr][cc]) continue;
+                var flip = false;
+                if (maskId === 0) flip = (rr + cc) % 2 === 0;
+                else if (maskId === 1) flip = rr % 2 === 0;
+                else if (maskId === 2) flip = cc % 3 === 0;
+                else if (maskId === 3) flip = (rr + cc) % 3 === 0;
+                else if (maskId === 4) flip = (Math.floor(rr / 2) + Math.floor(cc / 3)) % 2 === 0;
+                else if (maskId === 5) flip = ((rr * cc) % 2 + (rr * cc) % 3) === 0;
+                else if (maskId === 6) flip = (((rr * cc) % 2 + (rr * cc) % 3) % 2) === 0;
+                else if (maskId === 7) flip = (((rr + cc) % 2 + (rr * cc) % 3) % 2) === 0;
+                if (flip) mat[rr][cc] ^= 1;
+              }
+            }
+
+            // Format info: ECC Level M = 00 (2 bits) + 3-bit maskId -> 15-bit BCH(15,5) XOR 0x5412
+            var fmtData = (0 << 3) | maskId;
+            var rem = fmtData << 10;
+            for (var b = 14; b >= 10; b--) {
+              if ((rem >> b) & 1) rem ^= (0x537 << (b - 10));
+            }
+            var fmtBits = ((fmtData << 10) | rem) ^ 0x5412;
+
+            for (var k = 0; k <= 5; k++) {
+              mat[8][k] = (fmtBits >> (14 - k)) & 1;
+              mat[k][8] = (fmtBits >> k) & 1;
+            }
+            mat[8][7] = (fmtBits >> 8) & 1;
+            mat[8][8] = (fmtBits >> 7) & 1;
+            mat[7][8] = (fmtBits >> 6) & 1;
+            for (var k2 = 0; k2 < 8; k2++) {
+              mat[8][n - 1 - k2] = (fmtBits >> k2) & 1;
+              if (k2 < 7) mat[n - 1 - k2][8] = (fmtBits >> (14 - k2)) & 1;
+            }
+            return mat;
+          }
+
+          function scorePenalty(mat) {
+            var penalty = 0;
+            // Rule 1: 5+ consecutive same-color modules in rows/cols
+            for (var r1 = 0; r1 < n; r1++) {
+              var rowRun = 1;
+              var colRun = 1;
+              for (var c1 = 1; c1 < n; c1++) {
+                if (mat[r1][c1] === mat[r1][c1 - 1]) rowRun++;
+                else {
+                  if (rowRun >= 5) penalty += 3 + (rowRun - 5);
+                  rowRun = 1;
+                }
+                if (mat[c1][r1] === mat[c1 - 1][r1]) colRun++;
+                else {
+                  if (colRun >= 5) penalty += 3 + (colRun - 5);
+                  colRun = 1;
+                }
+              }
+              if (rowRun >= 5) penalty += 3 + (rowRun - 5);
+              if (colRun >= 5) penalty += 3 + (colRun - 5);
+            }
+            // Rule 2: 2x2 blocks
+            for (var r2 = 0; r2 < n - 1; r2++) {
+              for (var c2 = 0; c2 < n - 1; c2++) {
+                var v = mat[r2][c2];
+                if (v === mat[r2][c2 + 1] && v === mat[r2 + 1][c2] && v === mat[r2 + 1][c2 + 1]) {
+                  penalty += 3;
+                }
+              }
+            }
+            // Rule 4: dark ratio balance
+            var darkCount = 0;
+            for (var r4 = 0; r4 < n; r4++) {
+              for (var c4 = 0; c4 < n; c4++) {
+                if (mat[r4][c4]) darkCount++;
+              }
+            }
+            var pct = (darkCount * 100) / (n * n);
+            penalty += Math.floor(Math.abs(pct - 50) / 5) * 10;
+            return penalty;
+          }
+
+          var bestMat = null;
+          var bestScore = Infinity;
+          for (var m = 0; m < 8; m++) {
+            var candidate = applyMaskAndFormat(m);
+            var pen = scorePenalty(candidate);
+            if (pen < bestScore) {
+              bestScore = pen;
+              bestMat = candidate;
+            }
+          }
+          return bestMat;
+        }
+
+        function createQrSvg(url) {
+          var matrix = generateQrMatrix(url);
+          var n = matrix.length;
+          var quiet = 4;
+          var total = n + quiet * 2;
+          var paths = [];
+          for (var r = 0; r < n; r++) {
+            for (var c = 0; c < n; c++) {
+              if (matrix[r][c]) {
+                paths.push('M' + (c + quiet) + ',' + (r + quiet) + 'h1v1h-1z');
+              }
+            }
+          }
+          return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + total + ' ' + total + '" shape-rendering="crispEdges" role="img" aria-label="QR Code for ' + escapeAttr(url) + '">' +
+            '<rect width="' + total + '" height="' + total + '" fill="#ffffff"/>' +
+            '<path d="' + paths.join('') + '" fill="#0f172a"/>' +
+            '</svg>';
+        }
+
+        function setupInfoAndShareMenu() {
+          var menuWrap = document.getElementById('info-menu-wrap');
+          var menuBtn = document.getElementById('info-menu-btn');
+          var dropdown = document.getElementById('info-dropdown');
+          var helplineLink = document.getElementById('helpline-link');
+          var shareBtn = document.getElementById('apps-share-btn');
+          var qrModal = document.getElementById('qr-share-modal');
+          var qrContainer = document.getElementById('qr-code-container');
+          var qrUrlBox = document.getElementById('qr-share-url');
+          var closeQrBtn = document.getElementById('close-qr-share-btn');
+          var doneQrBtn = document.getElementById('done-qr-share-btn');
+          var copyQrBtn = document.getElementById('copy-share-url-btn');
+
+          if (!menuBtn || !dropdown) return;
+
+          function closeDropdown() {
+            dropdown.classList.remove('open');
+            menuBtn.setAttribute('aria-expanded', 'false');
+          }
+
+          function openQrModal() {
+            if (!qrModal || !qrContainer) return;
+            qrContainer.innerHTML = createQrSvg(APP_SHARE_URL);
+            if (qrUrlBox) qrUrlBox.textContent = APP_SHARE_URL;
+            qrModal.classList.add('open');
+          }
+
+          function closeQrModal() {
+            if (qrModal) qrModal.classList.remove('open');
+          }
+
+          menuBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            var isOpen = dropdown.classList.contains('open');
+            if (isOpen) {
+              closeDropdown();
+            } else {
+              dropdown.classList.add('open');
+              menuBtn.setAttribute('aria-expanded', 'true');
+            }
+          });
+
+          if (helplineLink) {
+            helplineLink.addEventListener('click', function () {
+              closeDropdown();
+            });
+          }
+
+          if (shareBtn) {
+            shareBtn.addEventListener('click', function () {
+              closeDropdown();
+              openQrModal();
+            });
+          }
+
+          if (closeQrBtn) closeQrBtn.addEventListener('click', closeQrModal);
+          if (doneQrBtn) doneQrBtn.addEventListener('click', closeQrModal);
+          if (qrModal) {
+            qrModal.addEventListener('click', function (e) {
+              if (e.target && e.target.id === 'qr-share-modal') closeQrModal();
+            });
+          }
+
+          if (copyQrBtn) {
+            copyQrBtn.addEventListener('click', function () {
+              if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+                navigator.clipboard.writeText(APP_SHARE_URL).then(function () {
+                  showToast('Link copied.');
+                }).catch(function () {
+                  showToast(APP_SHARE_URL);
+                });
+              } else {
+                showToast(APP_SHARE_URL);
+              }
+            });
+          }
+
+          document.addEventListener('click', function (e) {
+            if (menuWrap && !menuWrap.contains(e.target)) {
+              closeDropdown();
+            }
+          });
+
+          document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+              closeDropdown();
+              closeQrModal();
+            }
+          });
+        }
+
         function setupPWA() {
           var installBtn = document.getElementById('pwa-install-btn');
           var iosModal = document.getElementById('ios-install-modal');
@@ -3819,6 +4434,7 @@
         loadFromStorage();
         bindEvents();
         renderAll();
+        setupInfoAndShareMenu();
         setupPWA();
       })();
     </script>
